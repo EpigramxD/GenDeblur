@@ -4,7 +4,7 @@ import time
 import os
 from misc import check_and_convert_to_grayscale
 from freq_domain_utils import get_dft, get_dft_magnitude
-
+from misc import get_dark_channel
 
 def grad_quality(image):
     prepared_image = check_and_convert_to_grayscale(image)
