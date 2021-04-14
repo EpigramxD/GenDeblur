@@ -279,23 +279,3 @@ def get_quality(image, type):
     elif type == "cpbd":
         prepared_image = check_and_convert_to_grayscale(image)
         return cpbd.compute(prepared_image)
-
-
-def test_metric_on_blur(image, type):
-    print("TEST OF", type, "METRIC\n")
-
-    quality = get_quality(image, type)
-    print("original quality: " + str(quality))
-
-    start = time.time()
-    for i in range(1, 10):
-        radius = 5 * i
-        if radius % 2 == 0:
-            radius += 1
-
-        blurred_image = cv.GaussianBlur(image, (radius, radius), 0)
-        cv.imwrite("/home/epigram/Pictures/exampleImages/image4" + str(radius) + ".jpg", blurred_image)
-        quality = get_quality(blurred_image, type)
-        print("blurred with radius", radius, "quality", str(quality))
-    end = time.time()
-    print("TIME: " + str(end - start))
