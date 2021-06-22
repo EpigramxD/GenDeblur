@@ -56,17 +56,11 @@ class Individual:
             for col in range(0, self.kernel_size):
                 if random.random() < probability:
                     if random.random() < add_prob:
-                        # TODO uncomment
-                        #self.psf[row][col] += random.random()
-                        # TODO delete
-                        self.psf[row][col] = 1.0
+                        self.psf[row][col] += random.random()
                         if self.psf[row][col] > 1.0:
                             self.psf[row][col] = 1.0
                     else:
-                        # TODO uncomment
-                        # self.psf[row][col] -= random.random()
-                        # TODO delete
-                        self.psf[row][col] = 0.0
+                        self.psf[row][col] -= random.random()
                         if self.psf[row][col] < 0.0:
                             self.psf[row][col] = 0
         self.normalize()

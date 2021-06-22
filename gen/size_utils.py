@@ -13,7 +13,7 @@ def build_size_pyramid(image, kernel_size):
     result = dict()
     for size in kernel_sizes:
         multiplier = size / kernel_size
-        result[size] = cv.resize(image, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_BITS2)
+        result[size] = cv.resize(image, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_AREA)
         result[size] = np.float32(result[size])
         cv.normalize(result[size], result[size], 0.0, 1.0, cv.NORM_MINMAX)
     return result

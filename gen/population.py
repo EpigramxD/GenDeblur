@@ -46,12 +46,12 @@ class Population:
         """
         for individual in self.individuals:
             if deconvolution_type == "weiner":
-                deblurred_image = do_weiner_deconv(self.image, individual.psf, 100)
+                deblurred_image = do_weiner_deconv(self.image, individual.psf, 1000)
             elif deconvolution_type == "LR":
                 deblurred_image = do_RL_deconv(self.image, individual.psf, iterations=1)
             # обрезка краев, чтобы не портили оценку
             deblurred_image = crop_image(deblurred_image, int(deblurred_image.shape[1]/10), int(deblurred_image.shape[0]/10))
-            individual.score = get_quality(deblurred_image, self.metric_type) #- 2.0001 * np.count_nonzero(individual.psf)
+            individual.score = get_quality(deblurred_image, self.metric_type) #- np.count_nonzero(individual.psf)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):
