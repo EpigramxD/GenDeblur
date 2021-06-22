@@ -36,7 +36,7 @@ def do_RL_deconv(image, psf, iterations, clip=True):
     else:
         return do_RL_deconv_1c(image, psf, iterations, clip)
 
-def do_weiner_deconv(image, psf, K):
+def do_weiner_deconv_1c(image, psf, K):
     dummy = np.copy(image)
     dummy = np.fft.fft2(dummy)
     kernel = np.fft.fft2(psf, s=image.shape)
@@ -48,3 +48,5 @@ def do_weiner_deconv(image, psf, K):
     dummy = np.float32(dummy)
     cv.normalize(dummy, result, 0.0, 1.0, cv.NORM_MINMAX)
     return result
+
+# TODO do_weiner_deconv_3c

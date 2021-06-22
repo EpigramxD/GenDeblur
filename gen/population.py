@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.deconv import do_RL_deconv, do_weiner_deconv
+from utils.deconv import do_RL_deconv, do_weiner_deconv_1c
 from utils.misc import *
 from gen.mutation import mutate
 from utils.metric import get_quality
@@ -46,7 +46,7 @@ class Population:
         """
         for individual in self.individuals:
             if deconvolution_type == "weiner":
-                deblurred_image = do_weiner_deconv(self.image, individual.psf, 1000)
+                deblurred_image = do_weiner_deconv_1c(self.image, individual.psf, 1000)
             elif deconvolution_type == "LR":
                 deblurred_image = do_RL_deconv(self.image, individual.psf, iterations=1)
             # обрезка краев, чтобы не портили оценку

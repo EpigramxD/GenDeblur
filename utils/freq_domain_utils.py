@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-
+from numpy.fft import fft2, ifft2
 
 def get_dft(image, dft_type=cv.DFT_COMPLEX_OUTPUT):
     #image_normalized = image / 255.0
@@ -30,3 +30,26 @@ def get_dft_magnitude(dft):
     cv.log(magnitude, magnitude)
     cv.normalize(magnitude, magnitude, 0, 1, cv.NORM_MINMAX)
     return magnitude
+
+def freq_filter_1c(image, filter):
+    """
+    Частотная фильтрация
+    :param image: фильтруемое изображение
+    :param psf: ядро свертки
+    :return: результат фильтрации
+    """
+    image_copy = np.copy(image)
+    image_fft = np.fft.fft2(image_copy)
+    filter_fft = np.fft.fft2(filter, s=image.shape)
+
+    fft_mul = image_fft * filter_fft
+    fft_mul = np.abs(ifft2(fft_mul))
+
+    result = np.zeros(fft_mul.shape)
+    result = np.float32(result)
+
+    fft_mul = np.float32(fft_mul)
+
+    cv.normalize(fft_mul, result, 0.0, 1.0, cv.NORM_MINMAX)
+    return result
+
