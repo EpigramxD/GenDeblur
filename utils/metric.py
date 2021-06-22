@@ -1,8 +1,9 @@
+import copy
+import cpbd
 import cv2 as cv
 import numpy as np
-import time
+import imquality.brisque as brisque
 import os
-import cpbd
 from .misc import check_and_convert_to_grayscale
 from .freq_domain_utils import get_dft, get_dft_magnitude
 from .misc import get_dark_channel
@@ -18,7 +19,7 @@ def grad_quality(image):
 
 
 def fourier_quality(image):
-    prepared_image = check_and_convert_to_grayscale(image)
+    prepared_image = check_and_convert_to_grayscale(copy.deepcopy(image))
     dft = get_dft(prepared_image)
     dft_magnitude = get_dft_magnitude(dft)
     quality = cv.mean(dft_magnitude)[0]
@@ -26,11 +27,7 @@ def fourier_quality(image):
 
 
 def get_dark_quality(image, kernel_size):
-    if len(image.shape) == 3 and image.shape[2] == 3:
-        dark_channel = get_dark_channel(image, kernel_size)
-        return np.max(dark_channel)
-    else:
-        return None
+    return -1 * np.max(get_dark_channel(image, kernel_size))
 
 
 class DOM(object):
@@ -276,6 +273,7 @@ def get_quality(image, type):
         return get_dark_quality(image, 10)
     elif type == "dom":
         return dom.get_sharpness(image)
+    elif type == "brisque":
+        return brisque.score(image)
     elif type == "cpbd":
-        prepared_image = check_and_convert_to_grayscale(image)
-        return cpbd.compute(prepared_image)
+        return cpbd.compute(image)

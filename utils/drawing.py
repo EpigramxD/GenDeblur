@@ -18,3 +18,4 @@ def draw_line(shape, size, angle):
     cv.line(line_img, point1, point2, (1.0, 1.0, 1.0))
     cv.normalize(line_img, line_img, 0.0, 1.0, cv.NORM_MINMAX)
     return line_img
+
