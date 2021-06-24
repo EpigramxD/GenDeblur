@@ -1,29 +1,30 @@
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.size_utils import *
-from utils.deconv import do_RL_deconv, do_weiner_deconv_1c
 from utils.metric import get_quality
+from utils.deconv import do_RL_deconv, do_weiner_deconv_1c
+from skimage.metrics import peak_signal_noise_ratio
 from utils.misc import *
 
-
-class Population:
+# TODO по-человечески потом отнаследоваться от класса Population
+class RefPopulation:
     """
     Класс популяции
     """
-    def __init__(self, image, max_kernel_size, metric_type):
+    def __init__(self, sharp, blurred, max_kernel_size):
         """
         Конструктор
-        :param image: размытое изображение
+        :param sharp: четкое изображение
+        :param blurred: размытое изображение
         :param max_kernel_size: максимальный размер ядра
-        :param metric_type: используемая для оценки качества матрика (см. utils.metric.get_quality)
         """
-        self.metric_type = metric_type
-        # начальный размер ядра, всегда начинаем с ядра 3x3
+        # начальный размер ядра
         self.kernel_size = 3
         # получить пирамиду размеров
-        self.size_pyramid = build_size_pyramid(image, max_kernel_size)
+        self.size_pyramid = build_double_size_pyramid(sharp, blurred, max_kernel_size)
         # установить начальное размытое изображение самого маленького размера в ядре
-        self.image = self.size_pyramid[self.kernel_size]
+        self.sharp = self.size_pyramid[self.kernel_size][0]
+        self.blurred = self.size_pyramid[self.kernel_size][1]
         # список всех размеров ядер
         self.kernel_sizes = list(self.size_pyramid)
         # обновить размер популяции
@@ -34,25 +35,24 @@ class Population:
         self.individuals[0].psf[1][1] = 1.0
         self.individuals[0].psf[2][0] = 1.0
 
+    # оценка приспособленностей особи
     def fit(self, deconvolution_type):
         """
-        Оценка приспособленностей особей
+        Оценка приспособленностей особи
         :param deconvolution_type: вид инверсной фильтрации (деконволюции): "weiner" - фильтр винера, "LR" - метод Люси-Ричардсона
         """
         for individual in self.individuals:
             if deconvolution_type == "weiner":
-                deblurred_image = do_weiner_deconv_1c(self.image, individual.psf, 1000)
+                deblurred_image = do_weiner_deconv_1c(self.blurred, individual.psf, 0.0001)
             elif deconvolution_type == "LR":
-                deblurred_image = do_RL_deconv(self.image, individual.psf, iterations=1)
-            # обрезка краев, чтобы не портили оценку
-            #deblurred_image = crop_image(deblurred_image, int(deblurred_image.shape[1]/10), int(deblurred_image.shape[0]/10))
-            individual.score = get_quality(deblurred_image, self.metric_type) #- np.count_nonzero(individual.psf)
+                deblurred_image = do_RL_deconv(self.blurred, individual.psf, iterations=10)
+            individual.score = get_quality(deblurred_image, "fourier") * peak_signal_noise_ratio(self.sharp, deblurred_image) #- np.count_nonzero(individual.psf)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):
         """
         Обновление размера популяции
-        :param multiplier: множитель (во сколько раз должна увеличиться популяция, чем больше размер ядра, тем больше будет популяция)
+        :param multiplier: множитель (во сколько раз должна увеличиться популяция)
         :return:
         """
         self.size = self.kernel_size * multiplier
@@ -82,15 +82,14 @@ class Population:
         # расширение популяции
         self.__expand_population()
         # получить следующее по размеру размытое изображение из пирамиды
-        self.image = copy.deepcopy(self.size_pyramid[self.kernel_size])
-
+        self.sharp = copy.deepcopy(self.size_pyramid[self.kernel_size][0])
+        self.blurred = copy.deepcopy(self.size_pyramid[self.kernel_size][1])
         # апскейльнуть каждую особь
-        if upscale_type == "pad":
-            for individual in self.individuals:
+        for individual in self.individuals:
+            if upscale_type == "pad":
                 individual.upscale_pad(self.kernel_size)
-
-        elif upscale_type == "fill":
-            for individual in self.individuals:
+            elif upscale_type == "fill":
                 individual.upscale(self.kernel_size)
+
         print("POPULATION UPSCALED")
 

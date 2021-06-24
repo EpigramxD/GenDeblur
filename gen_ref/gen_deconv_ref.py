@@ -1,22 +1,23 @@
 from gen.crossover import *
 from gen.mutation import *
-from gen.population import Population
+from gen_ref.ref_population import RefPopulation
 from gen.selection import *
 from utils.size_utils import *
-from utils.deconv import do_weiner_deconv_1c, do_RL_deconv
+from utils.deconv import do_weiner_deconv_1c
 
 # константы
-STAGNATION_POPULATION_COUNT = 200
-UPSCALE_TYPE = "pad"
-CROSSOVER_PROBABILITY = 0.9
-MUTATION_PROBABILITY = 0.005
+STAGNATION_POPULATION_COUNT = 500
+UPSCALE_TYPE = "pod"
+CROSSOVER_PROBABILITY = 0.7
+MUTATION_PROBABILITY = 0.0005
 DECONV_TYPE = "weiner"
 
 
-def gen_deblur_image(image, kernel_size=23, metric_type="fourier", elite_count=0):
-    population = Population(image, kernel_size, metric_type)
+def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=0):
+    population = RefPopulation(sharp, blurred, kernel_size)
     best_quality_in_pop = -10000.0
     upscale_flag = 0
+    best_ever_kernel = np.zeros(sharp.shape)
 
     for i in range(0, len(population.kernel_sizes), 1):
         while True:
@@ -25,12 +26,17 @@ def gen_deblur_image(image, kernel_size=23, metric_type="fourier", elite_count=0
                 break
             population.fit(DECONV_TYPE)
             cv.imshow("best kernel resized", cv.resize(copy.deepcopy(population.individuals[0].psf), None, fx=10, fy=10, interpolation=cv.INTER_AREA))
-            cv.imshow("best restored", do_weiner_deconv_1c(population.image, population.individuals[0].psf, 100))
+            cv.imshow("best ever kernel", cv.resize(best_ever_kernel, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
+            #cv.imshow("best restored", do_RL_deconv(population.image, population.individuals[0].psf, iterations=10))
+            cv.imshow("best restored", do_weiner_deconv_1c(population.blurred, population.individuals[0].psf, 100))
+            cv.imshow("sharp", population.sharp)
+            cv.imshow("blurred", population.blurred)
             print(f"best quality in pop: {population.individuals[0].score}, best quality ever: {best_quality_in_pop}")
             cv.waitKey(10)
 
             if population.individuals[0].score > best_quality_in_pop:
                 best_quality_in_pop = population.individuals[0].score
+                best_ever_kernel = population.individuals[0].psf
                 upscale_flag = 0
 
             # элитизм
@@ -46,14 +52,21 @@ def gen_deblur_image(image, kernel_size=23, metric_type="fourier", elite_count=0
 
         # апскейлим
         if i != len(population.kernel_sizes) - 1:
+            best_quality_in_pop = -10000.0
             population.fit(DECONV_TYPE)
+            population.individuals[0].psf = best_ever_kernel
             population.upscale(UPSCALE_TYPE)
+            population.fit(DECONV_TYPE)
 
 
-image = cv.imread("D:\Images\IMGS\pic6.jpg", cv.IMREAD_GRAYSCALE)
-image = np.float32(image)
-cv.normalize(image, image, 0.0, 1.0, cv.NORM_MINMAX)
+sharp = cv.imread("../images/sharp/1.jpg", cv.IMREAD_GRAYSCALE)
+blurred = cv.imread("../images/blurred/1.jpg", cv.IMREAD_GRAYSCALE)
 
-gen_deblur_image(image)
+sharp = np.float32(sharp)
+cv.normalize(sharp, sharp, 0.0, 1.0, cv.NORM_MINMAX)
 
+blurred = np.float32(blurred)
+cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
+
+gen_deblur_image(sharp, blurred)
 cv.waitKey()

@@ -1,8 +1,13 @@
-import cv2
-import cv2 as cv
 import copy
+import cv2 as cv
+
 
 def check_and_convert_to_grayscale(image):
+    """
+    Конвертация в черн-белое, если изображение цветное
+    :param image: изображение
+    :return: ЧБ изображение
+    """
     if len(image.shape) == 3:
         return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     else:
@@ -10,6 +15,12 @@ def check_and_convert_to_grayscale(image):
 
 
 def get_dark_channel(image, size):
+    """
+    Получить "темный" канал изображения
+    :param image: изображение
+    :param size: размер ядра
+    :return: "темный" канал
+    """
     kernel = cv.getStructuringElement(cv.MORPH_RECT, (size, size))
     dark_channel = image
 
@@ -21,14 +32,14 @@ def get_dark_channel(image, size):
     return dark_channel
 
 
-def to_grayscale(image):
-    if image.shape[2] == 3:
-        return cv.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    else:
-        return None
-
-
 def crop_image(image, crop_width_size, crop_height_size):
+    """
+    Обрезает изображение по краям
+    :param image: изображение
+    :param crop_width_size: размер отсечения по бокам
+    :param crop_height_size: размер отсечения сверху и снизу
+    :return: обрезанное изображение
+    """
     width = image.shape[1]
     height = image.shape[0]
 

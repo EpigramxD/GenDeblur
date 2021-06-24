@@ -4,14 +4,14 @@ import cv2 as cv
 from gen.individual import Individual
 
 """
-Различные функции, которые реализуют методы скрещивания
+Методы скрещивания
 """
 
 
 def crossover_two_individuals(ind1, ind2):
     """
-    TODO: не работает
-    Какое-то идиотское скрещивание двух особей, которое я придумал в качестве эксперимента
+    TODO: убрать, это нерабочий бред
+    Экспериментальное скрещивание, которое пробовал в самом начале
     Используется в функции crossover
     :param ind1: родитель 1
     :param ind2: родитель 2
@@ -19,15 +19,16 @@ def crossover_two_individuals(ind1, ind2):
     """
     child1 = Individual(ind1.kernel_size, False)
     child2 = Individual(ind1.kernel_size, False)
-    child1.psf = cv.max(ind1.psf, ind2.psf)
-    child2.psf = ind1.psf + ind2.psf
+    child1.psf = ind1.psf * ind2.psf
+    child2.psf = ind1.psf * ind2.psf
+    child1.normalize()
     child2.normalize()
     return child1, child2
 
 
 def crossover(selected_individuals, size, probability=0.5):
     """
-    TODO: не работает
+    TODO: убрать, это нерабочий бред
     Скрещивание отобранных особей
     :param selected_individuals: отобранные на этапе селекции особи
     :param size: количество особей, которые должны получиться в результате скрещивания

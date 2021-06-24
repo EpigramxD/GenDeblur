@@ -17,10 +17,12 @@ class Individual:
         if len(args) == 1:
             if isinstance(args[0], np.ndarray):
                 self.psf = args[0].copy()
+                if self.psf.shape[0] != self.psf.shape[1]:
+                    raise AttributeError("Ядро смаза должно иметь одинаковую высоту и ширину".format(type(args[0])))
                 self.kernel_size = self.psf.shape[0]
                 self.score = 0.0
             else:
-                raise AttributeError("Given argument of type {}, but should be numpy.ndarray".format(type(args[0])))
+                raise AttributeError("Получен аргумент типа {}, а должен быть ndarray".format(type(args[0])))
 
         # Если параметров 2, то это начальный размер psf и boolean 'это линия'
         elif len(args) == 2:
@@ -35,7 +37,7 @@ class Individual:
                     self.psf[1][1] = 1.0
                     self.psf[1][2] = 1.0
             else:
-                raise AttributeError("Given arguments of type {} and {}, but should be int and bool".format(type(args[0]), type(args[1])))
+                raise AttributeError("Получены аргументы типа {} и {}, а должны быть int и bool".format(type(args[0]), type(args[1])))
 
         self.normalize()
 
@@ -46,7 +48,7 @@ class Individual:
         self.psf = np.float32(self.psf)
         cv.normalize(self.psf, self.psf, 0.0, 1.0, cv.NORM_MINMAX)
 
-    def mutate(self, probability=0.05, add_prob=0.5):
+    def mutate(self, probability=0.05, add_prob=0.000001):
         """
         Мутация особи
         :param probability: вероятность мутирования

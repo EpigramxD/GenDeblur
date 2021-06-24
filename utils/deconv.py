@@ -1,12 +1,18 @@
-import cv2 as cv
 from numpy.fft import fft2, ifft2
-import numpy as np
-from skimage import color, data, restoration
-from utils.drawing import draw_line
+from numpy.fft import fft2, ifft2
+from skimage import restoration
 from utils.metric import *
 
 
 def do_RL_deconv_1c(image, psf, iterations, clip=True):
+    """
+    Метод Люси-Ричардсона для 1 канала
+    :param image: изображение
+    :param psf: функция искажения
+    :param iterations: количество итераций
+    :param clip: см. в skimage.restoration.richardson_lucy
+    :return: результат
+    """
     if len(image.shape) == 2:
         image_ = np.float32(image)
         cv.normalize(image_, image_, 0.0, 1.0, cv.NORM_MINMAX)
@@ -19,6 +25,14 @@ def do_RL_deconv_1c(image, psf, iterations, clip=True):
 
 
 def do_RL_deconv_3c(image, psf, iterations, clip=True):
+    """
+    Метод Люси-Ричардсона для 3 каналов
+    :param image: изображение
+    :param psf: функция искажения
+    :param iterations: количество итераций
+    :param clip: см. в skimage.restoration.richardson_lucy
+    :return: результат
+    """
     if len(image.shape) == 3:
         image_ = np.float32(image)
         channels = list(cv.split(image_))
@@ -30,13 +44,30 @@ def do_RL_deconv_3c(image, psf, iterations, clip=True):
     else:
         raise AttributeError("Wrong image format, image should be RGB")
 
+
 def do_RL_deconv(image, psf, iterations, clip=True):
+    """
+    Метод Люси-Ричардсона
+    :param image: изображение
+    :param psf: функция искажения
+    :param iterations: количество итераций
+    :param clip: см. в skimage.restoration.richardson_lucy
+    :return: результат
+    """
     if len(image.shape) == 3:
         return do_RL_deconv_3c(image, psf, iterations, clip)
     else:
         return do_RL_deconv_1c(image, psf, iterations, clip)
 
+
 def do_weiner_deconv_1c(image, psf, K):
+    """
+    Фильтр Винера для одного канала
+    :param image: фильтруемое изображение
+    :param psf: функция искажения
+    :param K: константа сигнал-шум
+    :return: результат фильтрации
+    """
     dummy = np.copy(image)
     dummy = np.fft.fft2(dummy)
     kernel = np.fft.fft2(psf, s=image.shape)

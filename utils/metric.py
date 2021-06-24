@@ -10,6 +10,11 @@ from .misc import get_dark_channel
 
 
 def grad_quality(image):
+    """
+    Качество на основе градиента
+    :param image: оцениваемое изображение
+    :return: качество изображения
+    """
     prepared_image = check_and_convert_to_grayscale(image)
     sobel_x = cv.Sobel(prepared_image, cv.CV_64F, 1, 0)
     sobel_y = cv.Sobel(prepared_image, cv.CV_64F, 0, 1)
@@ -19,6 +24,11 @@ def grad_quality(image):
 
 
 def fourier_quality(image):
+    """
+    Качество на основе яркости образа Фурье
+    :param image: оцениваемое изображение
+    :return: качество изображения
+    """
     prepared_image = check_and_convert_to_grayscale(copy.deepcopy(image))
     dft = get_dft(prepared_image)
     dft_magnitude = get_dft_magnitude(dft)
@@ -27,6 +37,12 @@ def fourier_quality(image):
 
 
 def get_dark_quality(image, kernel_size):
+    """
+    Качество на основе "темного" канала изображения
+    :param image: оцениваемое изображение
+    :param kernel_size: размер ядра
+    :return: качество изображения
+    """
     return -1 * np.max(get_dark_channel(image, kernel_size))
 
 
@@ -259,12 +275,16 @@ class DOM(object):
         self.edges(image, edge_threshold=edge_threshold)
         score = self.sharpness_measure(Im, width=width, sharpness_threshold=sharpness_threshold)
         return score
-
-
 dom = DOM()
 
 
 def get_quality(image, type):
+    """
+    Получить качество по типу
+    :param image: оцениваемое изображение
+    :param type: тип метрики
+    :return: качество изображения
+    """
     if type == "gradient":
         return grad_quality(image)
     elif type == "fourier":
