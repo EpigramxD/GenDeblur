@@ -11,13 +11,15 @@ class RefPopulation:
     """
     Класс популяции
     """
-    def __init__(self, sharp, blurred, max_kernel_size):
+    def __init__(self, sharp, blurred, max_kernel_size, metric_type):
         """
         Конструктор
         :param sharp: четкое изображение
         :param blurred: размытое изображение
         :param max_kernel_size: максимальный размер ядра
+        :param metric_type: используемая для оценки качества матрика (см. utils.metric.get_quality)
         """
+        self.metric_type = metric_type
         # начальный размер ядра
         self.kernel_size = 3
         # получить пирамиду размеров
@@ -46,7 +48,7 @@ class RefPopulation:
                 deblurred_image = do_weiner_deconv_1c(self.blurred, individual.psf, 0.0001)
             elif deconvolution_type == "LR":
                 deblurred_image = do_RL_deconv(self.blurred, individual.psf, iterations=10)
-            individual.score = get_quality(deblurred_image, "fourier") * peak_signal_noise_ratio(self.sharp, deblurred_image) #- np.count_nonzero(individual.psf)
+            individual.score = get_quality(deblurred_image, self.metric_type) * peak_signal_noise_ratio(self.sharp, deblurred_image)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):

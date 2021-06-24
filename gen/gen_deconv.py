@@ -9,7 +9,7 @@ from utils.deconv import do_weiner_deconv_1c, do_RL_deconv
 STAGNATION_POPULATION_COUNT = 200
 UPSCALE_TYPE = "pad"
 CROSSOVER_PROBABILITY = 0.9
-MUTATION_PROBABILITY = 0.005
+MUTATION_PROBABILITY = 0.05
 DECONV_TYPE = "weiner"
 
 
@@ -33,7 +33,6 @@ def gen_deblur_image(image, kernel_size=23, metric_type="fourier", elite_count=0
                 best_quality_in_pop = population.individuals[0].score
                 upscale_flag = 0
 
-            # элитизм
             elite_individuals = copy.deepcopy(population.individuals[:elite_count])
             non_elite_individuals = copy.deepcopy(population.individuals[elite_count:])
             selected_individuals = select_tournament(non_elite_individuals, len(non_elite_individuals))

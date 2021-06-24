@@ -46,8 +46,8 @@ def crossover(selected_individuals, size, probability=0.5):
             children = crossover_two_individuals(parent1, parent2)
             new_population.append(children[0])
             new_population.append(children[1])
-            selected.remove(parent1)
-            selected.remove(parent2)
+            #selected.remove(parent1)
+            #selected.remove(parent2)
 
     if len(new_population) < size:
         need_to_fill = size - len(new_population)

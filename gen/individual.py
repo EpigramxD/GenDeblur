@@ -48,7 +48,7 @@ class Individual:
         self.psf = np.float32(self.psf)
         cv.normalize(self.psf, self.psf, 0.0, 1.0, cv.NORM_MINMAX)
 
-    def mutate(self, probability=0.05, add_prob=0.000001):
+    def mutate(self, probability=0.05, add_prob=0.00001):
         """
         Мутация особи
         :param probability: вероятность мутирования
