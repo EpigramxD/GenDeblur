@@ -1,10 +1,13 @@
+import math
+
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.size_utils import *
 from utils.metric import get_quality
 from utils.deconv import do_RL_deconv, do_weiner_deconv_1c
-from skimage.metrics import peak_signal_noise_ratio
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity, mean_squared_error
 from utils.misc import *
+import numpy as np
 
 # TODO по-человечески потом отнаследоваться от класса Population
 class RefPopulation:
@@ -45,10 +48,10 @@ class RefPopulation:
         """
         for individual in self.individuals:
             if deconvolution_type == "weiner":
-                deblurred_image = do_weiner_deconv_1c(self.blurred, individual.psf, 0.0001)
+                deblurred_image = do_weiner_deconv_1c(self.blurred, individual.psf, 0.01)
             elif deconvolution_type == "LR":
                 deblurred_image = do_RL_deconv(self.blurred, individual.psf, iterations=10)
-            individual.score = get_quality(deblurred_image, self.metric_type) * peak_signal_noise_ratio(self.sharp, deblurred_image)
+            individual.score = get_quality(deblurred_image, self.metric_type) + math.log(peak_signal_noise_ratio(self.sharp, deblurred_image))
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):
@@ -95,3 +98,25 @@ class RefPopulation:
 
         print("POPULATION UPSCALED")
 
+    def display(self):
+        count_in_row = int(self.size / 10)
+        count_in_col = 10
+
+        width = count_in_row * self.kernel_size
+        height = count_in_col * self.kernel_size
+
+        mat = np.zeros((height, width), np.float32)
+
+        i = 0
+        j = 0
+        for ind in self.individuals:
+            mat[i * self.kernel_size:i * self.kernel_size + self.kernel_size, j * self.kernel_size:j * self.kernel_size + self.kernel_size] = copy.deepcopy(ind.psf)
+
+            j += 1
+            if j == count_in_row:
+                j = 0
+                i += 1
+
+            if i == count_in_col:
+                cv.imshow("all kernels", cv.resize(mat, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
+                #cv.waitKey()
