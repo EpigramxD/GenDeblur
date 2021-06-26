@@ -74,7 +74,10 @@ def uniform_crossover(selected_individuals, probability):
             size = len(psf1)
             for i in range(size):
                 if random.random() < probability:
-                    psf1[i], psf2[i] = psf2[i], psf1[i]
+                    psf2[i] = psf1[i]
+
+            psf1 += psf2
+            cv.normalize(psf1, psf1, 0.0, 1.0, cv.NORM_MINMAX)
 
             parent1.psf = np.reshape(psf1, (psf_size, psf_size))
             parent2.psf = np.reshape(psf2, (psf_size, psf_size))
