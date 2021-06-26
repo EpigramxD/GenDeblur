@@ -15,7 +15,7 @@ def select_random(individuals, k):
     return [random.choice(individuals) for i in range(k)]
 
 
-def select_tournament(individuals, k, tournsize=3):
+def select_tournament(individuals, k, tournsize=2):
     """
     Турнирная селекция
     :param individuals: популяция
@@ -26,5 +26,5 @@ def select_tournament(individuals, k, tournsize=3):
     chosen = []
     for i in range(k):
         aspirants = select_random(individuals, tournsize)
-        chosen.append(max(aspirants, key=lambda ind: ind.score))
+        chosen.append(copy.deepcopy(max(aspirants, key=lambda ind: ind.score)))
     return chosen
