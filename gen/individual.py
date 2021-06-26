@@ -48,7 +48,7 @@ class Individual:
         self.psf = np.float32(self.psf)
         cv.normalize(self.psf, self.psf, 0.0, 1.0, cv.NORM_MINMAX)
 
-    def mutate(self, probability=0.05, add_prob=0.00001):
+    def mutate(self, probability=0.05, add_prob=0.000001):
         """
         Мутация особи
         :param probability: вероятность мутирования
@@ -65,6 +65,74 @@ class Individual:
                         self.psf[row][col] -= random.random()
                         if self.psf[row][col] < 0.0:
                             self.psf[row][col] = 0
+        self.normalize()
+
+    def __check_neighbors(self, row, col):
+        """
+        Проверяет наличие других светлых пикселей вокруг пикселя в строке row и столбце col
+        :param self: объект
+        :param row: номер строки пикселя
+        :param col: номер столбца пикселя
+        :return: boolean
+        """
+        return np.sum(self.psf[row-1:row+2, col-1:col+2]) > self.psf[row, col]
+
+    def __get_random_vertical_neighbor(self, row):
+        down_bound = 0
+        up_bound = self.psf.shape[0] - 1
+
+        if row == down_bound:
+            return random.choice([row + 1, row])
+        elif row == up_bound:
+            return random.choice([row - 1, row])
+        else:
+            return random.choice([row + 1, row - 1, row])
+
+    def __get_random_horizontal_neighbor(self, col):
+        left_bound = 0
+        right_bound = self.psf.shape[1] - 1
+
+        if col == left_bound:
+            return random.choice([col + 1, col])
+        elif col == right_bound:
+            return random.choice([col - 1, col])
+        else:
+            return random.choice([col + 1, col - 1, col])
+
+    def __get_random_neighbor_position(self, row, col):
+        # TODO: если что, убрать потом, может пригодится, если нынишний вариант не будут работать
+        # left = (row, col - 1)
+        # right = (row, col + 1)
+        # upper = (row + 1, col)
+        # down = (row - 1, col)
+        # upper_left = (row + 1, col - 1)
+        # down_left = (row - 1, col - 1)
+        # upper_right = (row + 1, col + 1)
+        # down_right = (row - 1, col + 1)
+        return self.__get_random_horizontal_neighbor(col), self.__get_random_vertical_neighbor(row)
+
+    def mutate_smart(self, probability=0.1, add_prob=0.9):
+        """
+        Умная мутация особи
+        :param probability: вероятность мутирования
+        :param add_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
+        """
+        bright_pixels = np.argwhere(self.psf > 0.0)
+
+        #TODO: попробовать потом мутировать по одному пикселю
+
+        for position in bright_pixels:
+            if random.random() < probability:
+                random_neighbor_position = self.__get_random_neighbor_position(position[0], position[1])
+                if random.random() < add_prob:
+                    self.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.1, 1.0)
+                    if self.psf[random_neighbor_position[0], random_neighbor_position[1]] > 1.0:
+                        self.psf[random_neighbor_position[0], random_neighbor_position[1]] = 1.0
+                else:
+                    self.psf[position[0], position[1]] -= random.uniform(0.1, 1.0)
+                    if self.psf[position[0], position[1]] < 0:
+                        self.psf[position[0], position[1]] = 0
+                break
         self.normalize()
 
     def upscale(self, new_kernel_size):
