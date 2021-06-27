@@ -55,7 +55,7 @@ def get_kernel_sizes(max_kernel_size):
     while current_kernel_size <= max_kernel_size:
         kernel_sizes.append(current_kernel_size)
         current_kernel_size += step
-        step *= 2
+        #step *= 2
 
     if kernel_sizes[len(kernel_sizes) - 1] < max_kernel_size:
         kernel_sizes.append(max_kernel_size)

@@ -8,15 +8,15 @@ from utils.size_utils import *
 from utils.deconv import do_weiner_deconv_1c
 
 # константы
-STAGNATION_POPULATION_COUNT = 500
+STAGNATION_POPULATION_COUNT = 100
 UPSCALE_TYPE = "pad"
 CROSSOVER_PROBABILITY = 0.9
-MUTATION_PROBABILITY = 0.1
+MUTATION_PROBABILITY = 0.5
 DECONV_TYPE = "weiner"
 SMART_MUTATION = True
 
 
-def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=10, metric_type="dark"):
+def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=0, metric_type="dark"):
     population = RefPopulation(sharp, blurred, kernel_size, metric_type)
     best_quality_in_pop = -10000.0
     upscale_flag = 0
@@ -35,7 +35,7 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=10, metric_type
             cv.imshow("sharp", population.sharp)
             cv.imshow("blurred", population.blurred)
             print(f"best quality in pop: {population.individuals[0].score}, best quality ever: {best_quality_in_pop}")
-            cv.waitKey(10)
+            cv.waitKey(1)
 
             if population.individuals[0].score > best_quality_in_pop:
                 best_quality_in_pop = copy.deepcopy(population.individuals[0].score)
@@ -52,12 +52,12 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=10, metric_type
             population.individuals.extend(copy.deepcopy(new_individuals))
             population.individuals.extend(copy.deepcopy(elite_individuals))
             upscale_flag += 1
-            population.fit(DECONV_TYPE)
-            population.display()
+            #population.fit(DECONV_TYPE)
+            #population.display()
 
         # апскейлим
         if i != len(population.kernel_sizes) - 1:
-
+            population.fit(DECONV_TYPE)
             xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
             for kernel in best_kernels:
                 xd_test += kernel
@@ -65,11 +65,11 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=10, metric_type
             best_kernels.clear()
             cv.imshow("xd_test", cv.resize(xd_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
 
+            for ind in population.individuals:
+                ind.psf = copy.deepcopy(xd_test)
+
             best_quality_in_pop = -10000.0
-            population.fit(DECONV_TYPE)
-            population.individuals[20].psf = copy.deepcopy(xd_test)
             population.upscale(UPSCALE_TYPE)
-            population.fit(DECONV_TYPE)
 
 
 sharp = cv.imread("../images/sharp/1.jpg", cv.IMREAD_GRAYSCALE)

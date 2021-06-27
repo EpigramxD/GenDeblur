@@ -82,22 +82,22 @@ class Individual:
         up_bound = self.psf.shape[0] - 1
 
         if row == down_bound:
-            return random.choice([row + 1, row + 2, row + 3, row])
+            return random.choice([row + 1, row + 2, row + 3])
         elif row == up_bound:
-            return random.choice([row - 1, row - 2, row - 3, row])
+            return random.choice([row - 1, row - 2, row - 3])
         else:
-            return random.choice([row + 1, row + 2, row + 3, row - 1, row - 2, row - 3, row])
+            return random.choice([row + 1, row + 2, row + 3, row - 1, row - 2, row - 3])
 
     def __get_random_horizontal_neighbor(self, col):
         left_bound = 0
         right_bound = self.psf.shape[1] - 1
 
         if col == left_bound:
-            return random.choice([col + 1, col + 2, col + 3, col])
+            return random.choice([col + 1, col + 2, col + 3])
         elif col == right_bound:
-            return random.choice([col - 1, col - 2, col - 3, col])
+            return random.choice([col - 1, col - 2, col - 3])
         else:
-            return random.choice([col + 1, col + 2, col + 3, col - 1, col - 2, col - 3, col])
+            return random.choice([col + 1, col + 2, col + 3, col - 1, col - 2, col - 3])
 
     def __get_random_neighbor_position(self, row, col):
         # TODO: если что, убрать потом, может пригодится, если нынишний вариант не будут работать
@@ -117,7 +117,7 @@ class Individual:
         :param probability: вероятность мутирования
         :param add_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
         """
-        bright_pixels = np.argwhere(self.psf > 0.0)
+        bright_pixels = np.argwhere(self.psf > 0.1)
 
         #TODO: попробовать потом мутировать по одному пикселю
 
@@ -127,15 +127,15 @@ class Individual:
 
                 if random.random() < add_prob:
                     try:
-                        self.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.4, 1.0)
+                        self.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.1, 1.0)
                         if self.psf[random_neighbor_position[0], random_neighbor_position[1]] > 1.0:
                             self.psf[random_neighbor_position[0], random_neighbor_position[1]] = 1.0
                     except IndexError:
-                        self.psf[position[0], position[1]] += random.uniform(0.4, 1.0)
+                        self.psf[position[0], position[1]] += random.uniform(0.1, 1.0)
                         if self.psf[position[0], position[1]] > 1.0:
                             self.psf[position[0], position[1]] = 1.0
                 else:
-                    self.psf[position[0], position[1]] -= random.uniform(0.4, 1.0)
+                    self.psf[position[0], position[1]] -= random.uniform(0.1, 1.0)
                     if self.psf[position[0], position[1]] < 0:
                         self.psf[position[0], position[1]] = 0
                 break

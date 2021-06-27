@@ -119,4 +119,3 @@ class RefPopulation:
 
             if i == count_in_col:
                 cv.imshow("all kernels", cv.resize(mat, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
-                #cv.waitKey()
