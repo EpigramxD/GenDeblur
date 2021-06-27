@@ -82,22 +82,22 @@ class Individual:
         up_bound = self.psf.shape[0] - 1
 
         if row == down_bound:
-            return random.choice([row + 1, row])
+            return random.choice([row + 1, row + 2, row + 3, row])
         elif row == up_bound:
-            return random.choice([row - 1, row])
+            return random.choice([row - 1, row - 2, row - 3, row])
         else:
-            return random.choice([row + 1, row - 1, row])
+            return random.choice([row + 1, row + 2, row + 3, row - 1, row - 2, row - 3, row])
 
     def __get_random_horizontal_neighbor(self, col):
         left_bound = 0
         right_bound = self.psf.shape[1] - 1
 
         if col == left_bound:
-            return random.choice([col + 1, col])
+            return random.choice([col + 1, col + 2, col + 3, col])
         elif col == right_bound:
-            return random.choice([col - 1, col])
+            return random.choice([col - 1, col - 2, col - 3, col])
         else:
-            return random.choice([col + 1, col - 1, col])
+            return random.choice([col + 1, col + 2, col + 3, col - 1, col - 2, col - 3, col])
 
     def __get_random_neighbor_position(self, row, col):
         # TODO: если что, убрать потом, может пригодится, если нынишний вариант не будут работать
@@ -124,12 +124,18 @@ class Individual:
         for position in bright_pixels:
             if random.random() < probability:
                 random_neighbor_position = self.__get_random_neighbor_position(position[0], position[1])
+
                 if random.random() < add_prob:
-                    self.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.1, 1.0)
-                    if self.psf[random_neighbor_position[0], random_neighbor_position[1]] > 1.0:
-                        self.psf[random_neighbor_position[0], random_neighbor_position[1]] = 1.0
+                    try:
+                        self.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.4, 1.0)
+                        if self.psf[random_neighbor_position[0], random_neighbor_position[1]] > 1.0:
+                            self.psf[random_neighbor_position[0], random_neighbor_position[1]] = 1.0
+                    except IndexError:
+                        self.psf[position[0], position[1]] += random.uniform(0.4, 1.0)
+                        if self.psf[position[0], position[1]] > 1.0:
+                            self.psf[position[0], position[1]] = 1.0
                 else:
-                    self.psf[position[0], position[1]] -= random.uniform(0.1, 1.0)
+                    self.psf[position[0], position[1]] -= random.uniform(0.4, 1.0)
                     if self.psf[position[0], position[1]] < 0:
                         self.psf[position[0], position[1]] = 0
                 break
@@ -142,7 +148,7 @@ class Individual:
         """
         multiplier = new_kernel_size / self.kernel_size
         self.kernel_size = new_kernel_size
-        self.psf = copy.deepcopy(cv.resize(self.psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_CUBIC))
+        self.psf = copy.deepcopy(cv.resize(self.psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_AREA))
         self.normalize()
 
     def upscale_pad(self, new_kernel_size):
