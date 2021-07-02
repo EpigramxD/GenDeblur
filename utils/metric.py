@@ -46,6 +46,12 @@ def get_dark_quality(image, kernel_size):
     return -1 * np.max(get_dark_channel(image, kernel_size))
 
 
+def grad_map_sim(image1, image2):
+    grad_image1 = cv.Laplacian(image1, cv.CV_32F)
+    grad_image2 = cv.Laplacian(image2, cv.CV_32F)
+    return np.sum(abs(grad_image1 - grad_image2))
+
+
 class DOM(object):
 
     def __init__(self):
