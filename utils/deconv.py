@@ -61,7 +61,7 @@ def do_RL_deconv(image, psf, iterations, clip=True):
         return do_RL_deconv_1c(image, psf, iterations, clip)
 
 
-def restore_divide(image, psf):
+def do_divide_deconv(image, psf):
     image_cpy = copy.deepcopy(image)
     image_fft = np.fft.fft2(image_cpy)
 
@@ -76,7 +76,7 @@ def restore_divide(image, psf):
     return result_normalized
 
 
-def do_weiner_deconv_1c(image, psf, K):
+def do_wiener_deconv_1c(image, psf, K):
     """
     Фильтр Винера для одного канала
     :param image: фильтруемое изображение
@@ -97,4 +97,11 @@ def do_weiner_deconv_1c(image, psf, K):
     cv.normalize(dummy, result, 0.0, 1.0, cv.NORM_MINMAX)
     return np.fft.fftshift(result)
 
-# TODO do_weiner_deconv_3c
+
+def do_deconv(image, psf, type):
+    if type == "wiener":
+        return do_wiener_deconv_1c(image, psf, 1)
+    elif type == "LR":
+        return do_RL_deconv_1c(image, psf, iterations=10)
+    elif type == "divide":
+        return do_divide_deconv(image, psf)

@@ -1,21 +1,17 @@
+import numpy as np
 from gen.crossover import *
 from gen.mutation import *
 from gen.selection import *
 from gen_ref.ref_population import RefPopulation
-from utils.deconv import do_weiner_deconv_1c
+from utils.deconv import do_wiener_deconv_1c
 from utils.drawing import *
-from utils.freq_domain_utils import freq_filter_1c
-from utils.metric import get_quality
-from skimage.metrics import peak_signal_noise_ratio, structural_similarity, mean_squared_error
 from utils.size_utils import *
-import numpy as np
-from numpy.fft import fft2, ifft2
 
 # константы
 STAGNATION_POPULATION_COUNT = 10
 UPSCALE_TYPE = "pad"
 METRIC_TYPE = "fourier"
-DECONV_TYPE = "weiner"
+DECONV_TYPE = "wiener"
 CROSSOVER_PROBABILITY = 0.9
 MUTATION_PROBABILITY = 0.1
 SMART_MUTATION = True
@@ -36,7 +32,7 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1):
             population.fit(DECONV_TYPE)
             cv.imshow("best kernel resized", cv.resize(copy.deepcopy(population.individuals[0].psf), None, fx=10, fy=10, interpolation=cv.INTER_AREA))
             cv.imshow("best ever kernel", cv.resize(best_ever_kernel, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
-            cv.imshow("best restored", do_weiner_deconv_1c(population.blurred, population.individuals[0].psf, 0.01))
+            cv.imshow("best restored", do_wiener_deconv_1c(population.blurred, population.individuals[0].psf, 0.01))
             cv.imshow("sharp", population.sharp)
             cv.imshow("blurred", population.blurred)
             print(f"best quality in pop: {population.individuals[0].score}, best quality ever: {best_quality_in_pop}")
@@ -57,8 +53,6 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1):
             population.individuals.extend(copy.deepcopy(new_individuals))
             population.individuals.extend(copy.deepcopy(elite_individuals))
             upscale_flag += 1
-            #population.fit(DECONV_TYPE)
-            #population.display()
 
         # апскейлим
         if i != len(population.kernel_sizes) - 1:

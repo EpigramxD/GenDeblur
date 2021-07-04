@@ -129,7 +129,7 @@ class Individual:
                     self.psf[position[0], position[1]] -= random.uniform(0.1, 1.0)
                     if self.psf[position[0], position[1]] < 0:
                         self.psf[position[0], position[1]] = 0
-                #break
+                break
         self.normalize()
 
     def upscale(self, new_kernel_size):

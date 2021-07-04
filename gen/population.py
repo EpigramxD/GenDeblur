@@ -1,7 +1,7 @@
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.size_utils import *
-from utils.deconv import do_RL_deconv, do_weiner_deconv_1c
+from utils.deconv import do_RL_deconv, do_wiener_deconv_1c
 from utils.metric import get_quality
 from utils.misc import *
 
@@ -41,7 +41,7 @@ class Population:
         """
         for individual in self.individuals:
             if deconvolution_type == "weiner":
-                deblurred_image = do_weiner_deconv_1c(self.image, individual.psf, 1000)
+                deblurred_image = do_wiener_deconv_1c(self.image, individual.psf, 1000)
             elif deconvolution_type == "LR":
                 deblurred_image = do_RL_deconv(self.image, individual.psf, iterations=1)
             # обрезка краев, чтобы не портили оценку
