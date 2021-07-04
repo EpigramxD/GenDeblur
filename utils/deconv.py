@@ -1,6 +1,7 @@
 from numpy.fft import fft2, ifft2
 from numpy.fft import fft2, ifft2
 from skimage import restoration
+from utils.size_utils import *
 from utils.metric import *
 
 
@@ -60,6 +61,21 @@ def do_RL_deconv(image, psf, iterations, clip=True):
         return do_RL_deconv_1c(image, psf, iterations, clip)
 
 
+def restore_divide(image, psf):
+    image_cpy = copy.deepcopy(image)
+    image_fft = np.fft.fft2(image_cpy)
+
+    psf_cpy = copy.deepcopy(psf)
+    psf_cpy = pad_to_shape(psf, image.shape)
+    psf_fft = np.fft.fft2(psf_cpy)
+
+    result_psf = image_fft / psf_fft
+    result = np.abs(np.fft.ifft2(result_psf))
+    result_normalized = np.zeros(result.shape, np.float32)
+    cv.normalize(result, result_normalized, 0.0, 1.0, cv.NORM_MINMAX)
+    return result_normalized
+
+
 def do_weiner_deconv_1c(image, psf, K):
     """
     Фильтр Винера для одного канала
@@ -70,7 +86,8 @@ def do_weiner_deconv_1c(image, psf, K):
     """
     dummy = np.copy(image)
     dummy = np.fft.fft2(dummy)
-    kernel = np.fft.fft2(psf, s=image.shape)
+    kernel = pad_to_shape(psf, image.shape)
+    kernel = np.fft.fft2(kernel)
     kernel = np.conj(kernel) / (np.abs(kernel) ** 2 + K)
     dummy = dummy * kernel
     dummy = np.abs(ifft2(dummy))
@@ -78,6 +95,6 @@ def do_weiner_deconv_1c(image, psf, K):
     result = np.float32(result)
     dummy = np.float32(dummy)
     cv.normalize(dummy, result, 0.0, 1.0, cv.NORM_MINMAX)
-    return result
+    return np.fft.fftshift(result)
 
 # TODO do_weiner_deconv_3c

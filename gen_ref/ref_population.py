@@ -3,8 +3,8 @@ import math
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.size_utils import *
-from utils.metric import get_quality
-from utils.deconv import do_RL_deconv, do_weiner_deconv_1c
+from utils.metric import get_quality, grad_map_sim
+from utils.deconv import do_RL_deconv, do_weiner_deconv_1c, restore_divide
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity, mean_squared_error
 from utils.misc import *
 import numpy as np
@@ -47,11 +47,15 @@ class RefPopulation:
         :param deconvolution_type: вид инверсной фильтрации (деконволюции): "weiner" - фильтр винера, "LR" - метод Люси-Ричардсона
         """
         for individual in self.individuals:
+            deblurred_image = np.zeros(self.blurred.shape, np.float32)
             if deconvolution_type == "weiner":
-                deblurred_image = do_weiner_deconv_1c(self.blurred, individual.psf, 0.01)
+                deblurred_image = do_weiner_deconv_1c(self.blurred, individual.psf, 1)
             elif deconvolution_type == "LR":
                 deblurred_image = do_RL_deconv(self.blurred, individual.psf, iterations=10)
-            individual.score = get_quality(deblurred_image, self.metric_type) + math.log(peak_signal_noise_ratio(self.sharp, deblurred_image))
+            elif deconvolution_type == "divide":
+                deblurred_image = restore_divide(self.blurred, individual.psf)
+
+            individual.score = math.log(structural_similarity(self.sharp, deblurred_image)) + get_quality(deblurred_image, self.metric_type)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):

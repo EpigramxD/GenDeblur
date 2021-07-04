@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+import copy
 from numpy.fft import fft2, ifft2
 
 
@@ -49,6 +50,37 @@ def get_dft_magnitude(dft):
     return magnitude
 
 
+def pad_to_shape(image, shape):
+    """
+    Расширить изображение до нужной формы нулями (черными рамками по краям)
+    :param image: расширяемое изображение
+    :param shape: новая форма - tuple (высота, ширина)
+    :return: рсширенное изображение
+    """
+    if shape[0] == image.shape[0] and shape[1] == image.shape[1]:
+        return copy.deepcopy(image)
+
+    elif shape[0] < image.shape[0] or shape[1] < image.shape[1]:
+        raise AttributeError("Новый размер должен быть меньше размера изображения")
+
+    center_y = int(shape[0] / 2)
+    center_x = int(shape[1] / 2)
+
+    half_height = int(image.shape[0] / 2)
+    half_width = int(image.shape[1] / 2)
+
+    x_index_from = center_x - half_width
+    x_index_to = center_x + image.shape[1] - half_width
+
+    y_index_from = center_y - half_height
+    y_index_to = center_y + image.shape[0] - half_height
+
+    result = np.zeros(shape, np.float32)
+    result[y_index_from:y_index_to, x_index_from:x_index_to] = copy.deepcopy(image)
+    cv.normalize(result, result, 0.0, 1.0, cv.NORM_MINMAX)
+    return result
+
+
 def freq_filter_1c(image, filter):
     """
     Частотная фильтрация для одного канала
@@ -56,9 +88,10 @@ def freq_filter_1c(image, filter):
     :param psf: ядро свертки
     :return: результат фильтрации
     """
+    kernel = pad_to_shape(filter, image.shape)
     image_copy = np.copy(image)
     image_fft = np.fft.fft2(image_copy)
-    filter_fft = np.fft.fft2(filter, s=image.shape)
+    filter_fft = np.fft.fft2(kernel)
 
     fft_mul = image_fft * filter_fft
     fft_mul = np.abs(ifft2(fft_mul))
@@ -69,5 +102,6 @@ def freq_filter_1c(image, filter):
     fft_mul = np.float32(fft_mul)
 
     cv.normalize(fft_mul, result, 0.0, 1.0, cv.NORM_MINMAX)
-    return result
+
+    return np.fft.fftshift(result)
 

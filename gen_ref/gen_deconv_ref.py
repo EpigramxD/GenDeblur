@@ -1,23 +1,28 @@
-import numpy as np
-
 from gen.crossover import *
 from gen.mutation import *
-from gen_ref.ref_population import RefPopulation
 from gen.selection import *
-from utils.size_utils import *
+from gen_ref.ref_population import RefPopulation
 from utils.deconv import do_weiner_deconv_1c
+from utils.drawing import *
+from utils.freq_domain_utils import freq_filter_1c
+from utils.metric import get_quality
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity, mean_squared_error
+from utils.size_utils import *
+import numpy as np
+from numpy.fft import fft2, ifft2
 
 # константы
-STAGNATION_POPULATION_COUNT = 100
+STAGNATION_POPULATION_COUNT = 10
 UPSCALE_TYPE = "pad"
-CROSSOVER_PROBABILITY = 0.9
-MUTATION_PROBABILITY = 0.5
+METRIC_TYPE = "fourier"
 DECONV_TYPE = "weiner"
+CROSSOVER_PROBABILITY = 0.9
+MUTATION_PROBABILITY = 0.1
 SMART_MUTATION = True
 
 
-def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=0, metric_type="dark"):
-    population = RefPopulation(sharp, blurred, kernel_size, metric_type)
+def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1):
+    population = RefPopulation(sharp, blurred, kernel_size, METRIC_TYPE)
     best_quality_in_pop = -10000.0
     upscale_flag = 0
     best_ever_kernel = np.zeros(sharp.shape)
@@ -72,14 +77,23 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=0, metric_type=
             population.upscale(UPSCALE_TYPE)
 
 
+# четкое изображение
 sharp = cv.imread("../images/sharp/1.jpg", cv.IMREAD_GRAYSCALE)
-blurred = cv.imread("../images/blurred/1.jpg", cv.IMREAD_GRAYSCALE)
-
+#sharp = sharp ** (1/2.2)
 sharp = np.float32(sharp)
 cv.normalize(sharp, sharp, 0.0, 1.0, cv.NORM_MINMAX)
 
-blurred = np.float32(blurred)
-cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
+# делаем линию
+line = draw_line(sharp.shape, 22, 45)
+line = np.float32(line)
+cv.normalize(line, line, 0.0, 1.0, cv.NORM_MINMAX)
 
+# искажаем изображение
+blurred = freq_filter_1c(sharp, line)
+cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
+cv.imshow("blurred", blurred)
+
+# генетика
 gen_deblur_image(sharp, blurred)
+
 cv.waitKey()

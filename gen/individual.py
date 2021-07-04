@@ -100,18 +100,9 @@ class Individual:
             return random.choice([col + 1, col + 2, col + 3, col - 1, col - 2, col - 3])
 
     def __get_random_neighbor_position(self, row, col):
-        # TODO: если что, убрать потом, может пригодится, если нынишний вариант не будут работать
-        # left = (row, col - 1)
-        # right = (row, col + 1)
-        # upper = (row + 1, col)
-        # down = (row - 1, col)
-        # upper_left = (row + 1, col - 1)
-        # down_left = (row - 1, col - 1)
-        # upper_right = (row + 1, col + 1)
-        # down_right = (row - 1, col + 1)
         return self.__get_random_horizontal_neighbor(col), self.__get_random_vertical_neighbor(row)
 
-    def mutate_smart(self, probability=0.1, add_prob=0.9):
+    def mutate_smart(self, probability=0.1, add_prob=0.1):
         """
         Умная мутация особи
         :param probability: вероятность мутирования
@@ -138,7 +129,7 @@ class Individual:
                     self.psf[position[0], position[1]] -= random.uniform(0.1, 1.0)
                     if self.psf[position[0], position[1]] < 0:
                         self.psf[position[0], position[1]] = 0
-                break
+                #break
         self.normalize()
 
     def upscale(self, new_kernel_size):
