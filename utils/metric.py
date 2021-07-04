@@ -1,4 +1,5 @@
 import copy
+import math
 import cpbd
 import cv2 as cv
 import numpy as np
@@ -6,6 +7,7 @@ import imquality.brisque as brisque
 import os
 from .misc import check_and_convert_to_grayscale
 from .freq_domain_utils import get_dft, get_dft_magnitude
+from skimage.metrics import structural_similarity, peak_signal_noise_ratio, mean_squared_error
 from .misc import get_dark_channel
 
 
@@ -284,11 +286,11 @@ class DOM(object):
 dom = DOM()
 
 
-def get_quality(image, type):
+def get_no_ref_quality(image, type):
     """
-    Получить качество по типу
+    Получить не-референсное качество по его типу
     :param image: оцениваемое изображение
-    :param type: тип метрики
+    :param type: тип не-референсной метрики
     :return: качество изображения
     """
     if type == "gradient":
@@ -303,3 +305,19 @@ def get_quality(image, type):
         return brisque.score(image)
     elif type == "cpbd":
         return cpbd.compute(image)
+
+
+def get_ref_qualiy(image1, image2, type):
+    """
+    Получить референсное качество по его типу
+    :param image1: эталонное изображение
+    :param image2: оцениваемое изображение
+    :param type: тип метрики
+    :return: качество изображения
+    """
+    if type == "ssim":
+        return math.log(structural_similarity(image1, image2))
+    if type == "psnr":
+        return math.log(peak_signal_noise_ratio(image1, image2))
+    if type == "mse":
+        return math.log(mean_squared_error(image1, image2))

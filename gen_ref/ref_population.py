@@ -3,7 +3,7 @@ from skimage.metrics import structural_similarity
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.deconv import do_deconv
-from utils.metric import get_quality
+from utils.metric import get_no_ref_quality, get_ref_qualiy
 from utils.size_utils import *
 
 
@@ -11,7 +11,7 @@ class RefPopulation:
     """
     Класс популяции
     """
-    def __init__(self, sharp, blurred, max_kernel_size, metric_type):
+    def __init__(self, sharp, blurred, max_kernel_size, no_ref_metric, ref_metric):
         """
         Конструктор
         :param sharp: четкое изображение
@@ -19,7 +19,8 @@ class RefPopulation:
         :param max_kernel_size: максимальный размер ядра
         :param metric_type: используемая для оценки качества матрика (см. utils.metric.get_quality)
         """
-        self.metric_type = metric_type
+        self.no_ref_metric = no_ref_metric
+        self.ref_metric = ref_metric
         # начальный размер ядра
         self.kernel_size = 3
         # получить пирамиду размеров
@@ -33,9 +34,6 @@ class RefPopulation:
         self.__update_pop_size()
         # создание особей
         self.individuals = [Individual(self.kernel_size, self.kernel_size==3) for i in range(0, self.size)]
-        self.individuals[0].psf[0][2] = 1.0
-        self.individuals[0].psf[1][1] = 1.0
-        self.individuals[0].psf[2][0] = 1.0
 
     # оценка приспособленностей особи
     def fit(self, deconvolution_type):
@@ -45,7 +43,7 @@ class RefPopulation:
         """
         for individual in self.individuals:
             deblurred_image = do_deconv(self.blurred, individual.psf, deconvolution_type)
-            individual.score = math.log(structural_similarity(self.sharp, deblurred_image)) + get_quality(deblurred_image, self.metric_type)
+            individual.score = get_ref_qualiy(self.sharp, deblurred_image, self.ref_metric) + get_no_ref_quality(deblurred_image, self.no_ref_metric)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):

@@ -10,7 +10,8 @@ from utils.size_utils import *
 # константы
 STAGNATION_POPULATION_COUNT = 10
 UPSCALE_TYPE = "pad"
-METRIC_TYPE = "fourier"
+NO_REF_METRIC = "fourier"
+REF_METRIC = "ssim"
 DECONV_TYPE = "wiener"
 CROSSOVER_PROBABILITY = 0.9
 MUTATION_PROBABILITY = 0.1
@@ -18,7 +19,7 @@ SMART_MUTATION = True
 
 
 def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1):
-    population = RefPopulation(sharp, blurred, kernel_size, METRIC_TYPE)
+    population = RefPopulation(sharp, blurred, kernel_size, NO_REF_METRIC, REF_METRIC)
     best_quality_in_pop = -10000.0
     upscale_flag = 0
     best_ever_kernel = np.zeros(sharp.shape)

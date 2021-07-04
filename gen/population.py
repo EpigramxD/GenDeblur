@@ -2,7 +2,7 @@ from gen.individual import Individual
 from gen.mutation import mutate
 from utils.size_utils import *
 from utils.deconv import do_RL_deconv, do_wiener_deconv_1c
-from utils.metric import get_quality
+from utils.metric import get_no_ref_quality
 from utils.misc import *
 
 
@@ -46,7 +46,7 @@ class Population:
                 deblurred_image = do_RL_deconv(self.image, individual.psf, iterations=1)
             # обрезка краев, чтобы не портили оценку
             #deblurred_image = crop_image(deblurred_image, int(deblurred_image.shape[1]/10), int(deblurred_image.shape[0]/10))
-            individual.score = get_quality(deblurred_image, self.metric_type) #- np.count_nonzero(individual.psf)
+            individual.score = get_no_ref_quality(deblurred_image, self.metric_type) #- np.count_nonzero(individual.psf)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):
