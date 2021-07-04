@@ -11,16 +11,19 @@ class RefPopulation:
     """
     Класс популяции
     """
-    def __init__(self, sharp, blurred, max_kernel_size, no_ref_metric, ref_metric):
+    def __init__(self, sharp, blurred, max_kernel_size, no_ref_metric, ref_metric, deconv_type):
         """
         Конструктор
         :param sharp: четкое изображение
         :param blurred: размытое изображение
         :param max_kernel_size: максимальный размер ядра
-        :param metric_type: используемая для оценки качества матрика (см. utils.metric.get_quality)
+        :param no_ref_metric: используемая для оценки качества не-референсная матрика (см. utils.metric.get_no_ref_quality)
+        :param ref_metric: используемая для оценки качества референсная матрика (см. utils.metric.get_ref_qualiy)
+        :param deconv_type: вид инверсной фильтрации
         """
         self.no_ref_metric = no_ref_metric
         self.ref_metric = ref_metric
+        self.deconv_type = deconv_type
         # начальный размер ядра
         self.kernel_size = 3
         # получить пирамиду размеров
@@ -36,13 +39,12 @@ class RefPopulation:
         self.individuals = [Individual(self.kernel_size, self.kernel_size==3) for i in range(0, self.size)]
 
     # оценка приспособленностей особи
-    def fit(self, deconvolution_type):
+    def fit(self):
         """
         Оценка приспособленностей особи
-        :param deconvolution_type: вид инверсной фильтрации (деконволюции): "weiner" - фильтр винера, "LR" - метод Люси-Ричардсона
         """
         for individual in self.individuals:
-            deblurred_image = do_deconv(self.blurred, individual.psf, deconvolution_type)
+            deblurred_image = do_deconv(self.blurred, individual.psf, self.deconv_type)
             individual.score = get_ref_qualiy(self.sharp, deblurred_image, self.ref_metric) + get_no_ref_quality(deblurred_image, self.no_ref_metric)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 

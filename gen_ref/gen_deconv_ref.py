@@ -19,7 +19,7 @@ SMART_MUTATION = True
 
 
 def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1):
-    population = RefPopulation(sharp, blurred, kernel_size, NO_REF_METRIC, REF_METRIC)
+    population = RefPopulation(sharp, blurred, kernel_size, NO_REF_METRIC, REF_METRIC, DECONV_TYPE)
     best_quality_in_pop = -10000.0
     upscale_flag = 0
     best_ever_kernel = np.zeros(sharp.shape)
@@ -30,7 +30,7 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1):
             if upscale_flag == STAGNATION_POPULATION_COUNT:
                 upscale_flag = 0
                 break
-            population.fit(DECONV_TYPE)
+            population.fit()
             cv.imshow("best kernel resized", cv.resize(copy.deepcopy(population.individuals[0].psf), None, fx=10, fy=10, interpolation=cv.INTER_AREA))
             cv.imshow("best ever kernel", cv.resize(best_ever_kernel, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
             cv.imshow("best restored", do_wiener_deconv_1c(population.blurred, population.individuals[0].psf, 0.01))
@@ -57,7 +57,7 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1):
 
         # апскейлим
         if i != len(population.kernel_sizes) - 1:
-            population.fit(DECONV_TYPE)
+            population.fit()
             xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
             for kernel in best_kernels:
                 xd_test += kernel
