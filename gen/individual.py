@@ -48,16 +48,16 @@ class Individual:
         self.psf = np.float32(self.psf)
         cv.normalize(self.psf, self.psf, 0.0, 1.0, cv.NORM_MINMAX)
 
-    def mutate(self, probability=0.05, add_prob=0.000001):
+    def mutate(self, probability, pos_prob):
         """
         Мутация особи
         :param probability: вероятность мутирования
-        :param add_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
+        :param pos_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
         """
         for row in range(0, self.kernel_size):
             for col in range(0, self.kernel_size):
                 if random.random() < probability:
-                    if random.random() < add_prob:
+                    if random.random() < pos_prob:
                         self.psf[row][col] += random.random()
                         if self.psf[row][col] > 1.0:
                             self.psf[row][col] = 1.0
@@ -67,17 +67,12 @@ class Individual:
                             self.psf[row][col] = 0
         self.normalize()
 
-    def __check_neighbors(self, row, col):
-        """
-        Проверяет наличие других светлых пикселей вокруг пикселя в строке row и столбце col
-        :param self: объект
-        :param row: номер строки пикселя
-        :param col: номер столбца пикселя
-        :return: boolean
-        """
-        return np.sum(self.psf[row-1:row+2, col-1:col+2]) > self.psf[row, col]
-
     def __get_random_vertical_neighbor(self, row):
+        """
+        Выбрать индекс случайного соседа по вертикали
+        :param row: номер строки элемента, вокруг которого ищется сосед
+        :return: случайный индекс
+        """
         down_bound = 0
         up_bound = self.psf.shape[0] - 1
 
@@ -89,6 +84,11 @@ class Individual:
             return random.choice([row + 1, row + 2, row + 3, row - 1, row - 2, row - 3])
 
     def __get_random_horizontal_neighbor(self, col):
+        """
+        Выбрать индекс случайного соседа по горизонтали
+        :param col: номер столбца элемента, вокруг которого ищется сосед
+        :return: случайный индекс
+        """
         left_bound = 0
         right_bound = self.psf.shape[1] - 1
 
@@ -100,23 +100,21 @@ class Individual:
             return random.choice([col + 1, col + 2, col + 3, col - 1, col - 2, col - 3])
 
     def __get_random_neighbor_position(self, row, col):
-        return self.__get_random_horizontal_neighbor(col), self.__get_random_vertical_neighbor(row)
+        return self.__get_random_vertical_neighbor(row), self.__get_random_horizontal_neighbor(col)
 
-    def mutate_smart(self, probability=0.1, add_prob=0.1):
+    def mutate_smart(self, probability, pos_prob):
         """
         Умная мутация особи
         :param probability: вероятность мутирования
-        :param add_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
+        :param pos_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
         """
         bright_pixels = np.argwhere(self.psf > 0.1)
-
-        #TODO: попробовать потом мутировать по одному пикселю
 
         for position in bright_pixels:
             if random.random() < probability:
                 random_neighbor_position = self.__get_random_neighbor_position(position[0], position[1])
 
-                if random.random() < add_prob:
+                if random.random() < pos_prob:
                     try:
                         self.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.1, 1.0)
                         if self.psf[random_neighbor_position[0], random_neighbor_position[1]] > 1.0:
