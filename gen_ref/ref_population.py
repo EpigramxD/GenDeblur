@@ -1,5 +1,3 @@
-import math
-from skimage.metrics import structural_similarity
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.deconv import do_deconv
@@ -38,10 +36,9 @@ class RefPopulation:
         # создание особей
         self.individuals = [Individual(self.kernel_size, self.kernel_size==3) for i in range(0, self.size)]
 
-    # оценка приспособленностей особи
     def fit(self):
         """
-        Оценка приспособленностей особи
+        Оценка приспособленностей особей популяции
         """
         for individual in self.individuals:
             deblurred_image = do_deconv(self.blurred, individual.psf, self.deconv_type)
@@ -68,7 +65,7 @@ class RefPopulation:
         old_size = self.size
         self.__update_pop_size()
         copy_diff = copy.deepcopy(self.individuals[old_size - (self.size - old_size) - 1:old_size - 1])
-        copy_diff = mutate(copy_diff)
+        copy_diff = mutate(copy_diff, probability=0.1, add_prob=0.5, use_smart=True)
         self.individuals.extend(copy.deepcopy(copy_diff))
         print("POPULATION EXPANDED")
 
@@ -88,9 +85,9 @@ class RefPopulation:
             if upscale_type == "pad":
                 individual.upscale_pad(self.kernel_size)
             elif upscale_type == "fill":
-                individual.upscale(self.kernel_size)
+                individual.upscale_fill(self.kernel_size)
 
-        print("POPULATION UPSCALED")
+        print("POPULATION UPSCALED TO SIZE: {}".format(self.kernel_size))
 
     def display(self):
         count_in_row = int(self.size / 10)

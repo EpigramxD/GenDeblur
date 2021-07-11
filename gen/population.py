@@ -91,6 +91,6 @@ class Population:
 
         elif upscale_type == "fill":
             for individual in self.individuals:
-                individual.upscale(self.kernel_size)
+                individual.upscale_fill(self.kernel_size)
         print("POPULATION UPSCALED")
 

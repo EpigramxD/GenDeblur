@@ -130,7 +130,7 @@ class Individual:
                 break
         self.normalize()
 
-    def upscale(self, new_kernel_size):
+    def upscale_fill(self, new_kernel_size):
         """
         Увеличение размера ядра путем растягивания (масштабирования)
         :param new_kernel_size: новый размер ядра
