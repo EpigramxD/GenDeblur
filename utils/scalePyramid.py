@@ -1,5 +1,5 @@
 import cv2 as cv
-from .filteringUtils import FilteringUtils
+from .imgUtils import ImgUtils
 
 class ScalePyramidRef(object):
     """
@@ -18,17 +18,16 @@ class ScalePyramidRef(object):
         :param max_kernel_size: максимальный размер ядра
         :param inter_type: вид интерполяции
         """
-        self.__sizes = self.__get_sizes(min_kernel_size, step, max_kernel_size)
-        self.__images = dict()
+        self.__get_sizes(min_kernel_size, step, max_kernel_size)
         self.__build(sharp_img, blurred_img, max_kernel_size, inter_type)
 
     @property
-    def sizes(self):
+    def kernel_sizes(self):
         """
         Получить все размеры ядер
         :return:
         """
-        return self.__sizes
+        return self.__kernel_sizes
 
     @property
     def images(self):
@@ -46,7 +45,8 @@ class ScalePyramidRef(object):
         :param min_kernel_size: максимальный размер ядра (разрешение функции искажения)
         :param inter_type: вид интерполяции
         """
-        for size in self.sizes:
+        self.__images = dict()
+        for size in self.__kernel_sizes:
             multiplier = size / min_kernel_size
             if multiplier != 1:
                 sharp_resized = cv.resize(sharp_img, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
@@ -54,8 +54,8 @@ class ScalePyramidRef(object):
             else:
                 sharp_resized = sharp_img.copy()
                 blurred_resized = blurred_img.copy()
-            sharp_resized = FilteringUtils.im2double(sharp_resized)
-            blurred_resized = FilteringUtils.im2double(blurred_resized)
+            sharp_resized = ImgUtils.im2double(sharp_resized)
+            blurred_resized = ImgUtils.im2double(blurred_resized)
             self.__images[size] = (sharp_resized, blurred_resized)
 
     def __get_sizes(self, min_kernel_size, step, max_kernel_size):
@@ -64,14 +64,12 @@ class ScalePyramidRef(object):
         :param min_kernel_size: минимальный размер ядра (разрешение функции искажения)
         :param step: приращение разрешения ядра при переходе на новый уровень пирамиды
         :param max_kernel_size: максимальный размер ядра (разрешение функции искажения)
-        :return: список размеров ядер
         """
-        kernel_sizes = []
+        self.__kernel_sizes = list()
         current_kernel_size = min_kernel_size
         while current_kernel_size <= max_kernel_size:
-            kernel_sizes.append(current_kernel_size)
+            self.__kernel_sizes.append(current_kernel_size)
             current_kernel_size += step
 
-        if kernel_sizes[len(kernel_sizes) - 1] < max_kernel_size:
-            kernel_sizes.append(max_kernel_size)
-        return kernel_sizes
+        if self.__kernel_sizes[len(self.__kernel_sizes) - 1] < max_kernel_size:
+            self.__kernel_sizes.append(max_kernel_size)

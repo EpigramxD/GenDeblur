@@ -1,15 +1,7 @@
-import cv2 as cv
-import cv2.quality as q
-from copy import copy as cp
-import imquality.brisque as brisque
-from skimage.metrics import structural_similarity as ssim
-import numpy as np
-from skimage import color, data, restoration
-from utils.drawing import draw_line
+from utils.deconv import *
 from utils.metric import *
 from utils.misc import *
-from numpy import linalg as LA
-from utils.deconv import *
+from utils.imgUtils import ImgUtils
 
 
 # image = cv.imread("images/blurred/noisy.jpg", cv.IMREAD_COLOR)
@@ -33,7 +25,7 @@ def display_dft(image, window_name):
 
 
 sharp = cv.imread("images/sharp/bstu2.jpg", cv.IMREAD_GRAYSCALE)
-sharp = im2double(sharp)
+sharp = ImgUtils.im2double(sharp)
 sharp_dft = display_dft(sharp, "sharp_dft")
 
 psf = cv.imread("images/psfs/2.png", cv.IMREAD_GRAYSCALE)
@@ -53,7 +45,7 @@ y_index_to = center_y + psf.shape[0] - half_height
 
 psf_resized = np.zeros(sharp.shape, np.double)
 psf_resized[y_index_from:y_index_to, x_index_from:x_index_to] = psf.copy()
-psf_resized = im2double(psf_resized)
+psf_resized = ImgUtils.im2double(psf_resized)
 
 # фильтрация
 image_fft = np.fft.fft2(sharp)

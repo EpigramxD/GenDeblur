@@ -3,7 +3,7 @@ import copy
 import cv2 as cv
 import numpy as np
 
-from utils.filteringUtils import FilteringUtils
+from utils.imgUtils import ImgUtils
 
 
 def build_size_pyramid(image, max_kernel_size):
@@ -20,68 +20,6 @@ def build_size_pyramid(image, max_kernel_size):
         result[size] = cv.resize(image, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_AREA)
         result[size] = np.float32(result[size])
         cv.normalize(result[size], result[size], 0.0, 1.0, cv.NORM_MINMAX)
-    return result
-
-
-def build_double_size_pyramid(sharp, blurred, max_kernel_size, inter_type=cv.INTER_AREA):
-    """
-    Строит пирамиду, но только уже для пар четкого и размытого изображения
-    :param sharp: четкое изображение
-    :param blurred: рамызтое изображение
-    :param max_kernel_size: максимальный размер ядра
-    :param inter_type: вид рессайза
-    :return: пирамида
-    """
-    kernel_sizes = get_kernel_sizes(max_kernel_size)
-    result = dict()
-    for size in kernel_sizes:
-        multiplier = size / max_kernel_size
-        if multiplier != 1:
-            sharp_resized = cv.resize(sharp, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
-            blurred_resized = cv.resize(blurred, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
-        else:
-            sharp_resized = copy.deepcopy(sharp)
-            blurred_resized = copy.deepcopy(blurred)
-
-        sharp_resized = np.float32(sharp_resized)
-        cv.normalize(sharp_resized, sharp_resized, 0.0, 1.0, cv.NORM_MINMAX)
-
-        blurred_resized = np.float32(blurred_resized)
-        cv.normalize(blurred_resized, blurred_resized, 0.0, 1.0, cv.NORM_MINMAX)
-
-        result[size] = (sharp_resized, blurred_resized)
-    return result
-
-
-def build_double_size_pyramid_new(sharp, psf, max_kernel_size, inter_type=cv.INTER_AREA):
-    """
-    Строит пирамиду, но только уже для пар четкого и размытого изображения
-    :param sharp: четкое изображение
-    :param blurred: рамызтое изображение
-    :param max_kernel_size: максимальный размер ядра
-    :param inter_type: вид рессайза
-    :return: пирамида
-    """
-    kernel_sizes = get_kernel_sizes(max_kernel_size)
-    result = dict()
-    for size in kernel_sizes:
-        multiplier = size / max_kernel_size
-        if multiplier != 1:
-            sharp_resized = cv.resize(sharp, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
-            psf_resized = cv.resize(psf, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
-            blurred_resized = FilteringUtils.freq_filter(sharp_resized, psf_resized)
-        else:
-            sharp_resized = copy.deepcopy(sharp)
-            psf_resized = copy.deepcopy(psf)
-            blurred_resized = FilteringUtils.freq_filter(sharp_resized, psf_resized)
-
-        sharp_resized = np.float32(sharp_resized)
-        cv.normalize(sharp_resized, sharp_resized, 0.0, 1.0, cv.NORM_MINMAX)
-
-        blurred_resized = np.float32(blurred_resized)
-        cv.normalize(blurred_resized, blurred_resized, 0.0, 1.0, cv.NORM_MINMAX)
-
-        result[size] = (sharp_resized, blurred_resized)
     return result
 
 

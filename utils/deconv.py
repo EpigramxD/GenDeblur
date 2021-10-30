@@ -1,9 +1,8 @@
-from numpy.fft import fft2, ifft2
-from numpy.fft import fft2, ifft2
+from numpy.fft import fft2
+from numpy.fft import ifft2
 from skimage import restoration
 from utils.size_utils import *
-from utils.metric import *
-from utils.filteringUtils import FilteringUtils
+
 
 def do_RL_deconv_1c(image, psf, iterations, clip=False):
     """
@@ -66,7 +65,7 @@ def do_divide_deconv(image, psf):
     image_fft = np.fft.fft2(image_cpy)
 
     psf_cpy = copy.deepcopy(psf)
-    psf_cpy = FilteringUtils.pad_to_shape(psf, image.shape)
+    psf_cpy = ImgUtils.pad_to_shape(psf, image.shape)
     psf_fft = np.fft.fft2(psf_cpy)
 
     result_psf = image_fft / psf_fft
@@ -86,7 +85,7 @@ def do_wiener_deconv_1c(image, psf, K):
     """
     dummy = np.copy(image)
     dummy = np.fft.fft2(dummy)
-    kernel = FilteringUtils.pad_to_shape(psf, image.shape)
+    kernel = ImgUtils.pad_to_shape(psf, image.shape)
     kernel = np.fft.fft2(kernel)
     kernel = np.conj(kernel) / (np.abs(kernel) ** 2 + K)
     dummy = dummy * kernel

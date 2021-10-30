@@ -1,10 +1,9 @@
 from gen.crossover import *
 from gen.mutation import *
 from gen.selection import *
-from gen_ref.ref_population import RefPopulation
+from gen_ref.ref_population import PopulationRef
 from utils.deconv import do_wiener_deconv_1c
 from utils.size_utils import *
-from utils.filteringUtils import FilteringUtils
 
 # константы
 STAGNATION_POPULATION_COUNT = 15
@@ -18,14 +17,14 @@ POS_PROBABILITY = 0.5
 SMART_MUTATION = True
 
 
-def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1, display_process=False):
-    population = RefPopulation(sharp, blurred, kernel_size, NO_REF_METRIC, REF_METRIC, DECONV_TYPE)
+def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=23, elite_count=1, display_process=False):
+    population = PopulationRef(sharp, blurred, min_kernel_size, step, max_kernel_size, NO_REF_METRIC, REF_METRIC, DECONV_TYPE)
     best_quality_in_pop = -10000.0
     upscale_flag = 0
     best_ever_kernel = np.zeros(sharp.shape)
     best_kernels = []
 
-    for i in range(0, len(population.kernel_sizes), 1):
+    for i in range(0, len(population.scale_pyramid.kernel_sizes), 1):
         while True:
             if upscale_flag == STAGNATION_POPULATION_COUNT:
                 upscale_flag = 0
@@ -60,7 +59,7 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1, display_proc
             upscale_flag += 1
 
         # апскейлим
-        if i != len(population.kernel_sizes) - 1:
+        if i != len(population.scale_pyramid.kernel_sizes) - 1:
             # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
             # for kernel in best_kernels:
             #     xd_test += kernel
@@ -97,7 +96,7 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1, display_proc
             best_quality_in_pop = -10000.0
             population.upscale(UPSCALE_TYPE)
 
-        if i == len(population.kernel_sizes) - 1:
+        if i == len(population.scale_pyramid.kernel_sizes) - 1:
             # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
             # for kernel in best_kernels:
             #     xd_test += kernel
@@ -139,8 +138,8 @@ sharp = np.float32(sharp)
 cv.normalize(sharp, sharp, 0.0, 1.0, cv.NORM_MINMAX)
 
 psf = cv.imread("../images/psfs/2.png", cv.IMREAD_GRAYSCALE)
-psf = FilteringUtils.pad_to_shape(psf, sharp.shape)
-blurred = FilteringUtils.freq_filter(sharp, psf)
+psf = ImgUtils.pad_to_shape(psf, sharp.shape)
+blurred = ImgUtils.freq_filter(sharp, psf)
 cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
 
 # генетика

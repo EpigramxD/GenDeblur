@@ -1,19 +1,19 @@
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.deconv import do_deconv
-from utils.metric import frob_metric, frob_metric2
+from utils.scalePyramid import ScalePyramidRef
 from utils.metric import get_no_ref_quality, get_ref_qualiy
 from utils.size_utils import *
 
-class RefPopulation:
+class PopulationRef:
     """
     Класс популяции
     """
-    def __init__(self, sharp, blurred, max_kernel_size, no_ref_metric, ref_metric, deconv_type):
+    def __init__(self, sharp_img, blurred_img, min_kernel_size, step, max_kernel_size, no_ref_metric, ref_metric, deconv_type):
         """
         Конструктор
-        :param sharp: четкое изображение
-        :param blurred: размытое изображение
+        :param sharp_img: четкое изображение
+        :param blurred_img: размытое изображение
         :param max_kernel_size: максимальный размер ядра
         :param no_ref_metric: используемая для оценки качества не-референсная матрика (см. utils.metric.get_no_ref_quality)
         :param ref_metric: используемая для оценки качества референсная матрика (см. utils.metric.get_ref_qualiy)
@@ -22,19 +22,15 @@ class RefPopulation:
         self.no_ref_metric = no_ref_metric
         self.ref_metric = ref_metric
         self.deconv_type = deconv_type
-        # начальный размер ядра
-        self.kernel_size = 3
-        # получить пирамиду размеров
-        self.size_pyramid = build_double_size_pyramid(sharp, blurred, max_kernel_size)
-        # установить начальное размытое изображение самого маленького размера в ядре
-        self.sharp = self.size_pyramid[self.kernel_size][0]
-        self.blurred = self.size_pyramid[self.kernel_size][1]
-        # список всех размеров ядер
-        self.kernel_sizes = list(self.size_pyramid)
+        # текущий размер ядра
+        self.kernel_size = min_kernel_size
+        self.scale_pyramid = ScalePyramidRef(sharp_img, blurred_img, min_kernel_size, step, max_kernel_size)
+        self.sharp = self.scale_pyramid.images[self.kernel_size][0]
+        self.blurred = self.scale_pyramid.images[self.kernel_size][1]
         # обновить размер популяции
         self.__update_pop_size()
         # создание особей
-        self.individuals = [Individual(self.kernel_size, self.kernel_size==3) for i in range(0, self.size)]
+        self.individuals = [Individual(self.kernel_size, True) for i in range(0, self.size)]
 
     def fit(self):
         """
@@ -60,10 +56,9 @@ class RefPopulation:
     def __expand_population(self):
         """
         Расширение популяции до указанного размера self.size
-        :return:
         """
-        new_kernel_size_index = self.kernel_sizes.index(self.kernel_size) + 1
-        new_kernel_size = self.kernel_sizes[new_kernel_size_index]
+        new_kernel_size_index = self.scale_pyramid.kernel_sizes.index(self.kernel_size) + 1
+        new_kernel_size = self.scale_pyramid.kernel_sizes[new_kernel_size_index]
         self.kernel_size = new_kernel_size
         old_size = self.size
         self.__update_pop_size()
@@ -81,8 +76,8 @@ class RefPopulation:
         # расширение популяции
         self.__expand_population()
         # получить следующее по размеру размытое изображение из пирамиды
-        self.sharp = copy.deepcopy(self.size_pyramid[self.kernel_size][0])
-        self.blurred = copy.deepcopy(self.size_pyramid[self.kernel_size][1])
+        self.sharp = copy.deepcopy(self.scale_pyramid.images[self.kernel_size][0])
+        self.blurred = copy.deepcopy(self.scale_pyramid.images[self.kernel_size][1])
         # апскейльнуть каждую особь
         for individual in self.individuals:
             if upscale_type == "pad":
@@ -90,7 +85,7 @@ class RefPopulation:
             elif upscale_type == "fill":
                 individual.upscale_fill(self.kernel_size)
 
-        print("POPULATION UPSCALED TO SIZE: {}".format(self.kernel_size))
+        print(f"POPULATION UPSCALED TO SIZE: {self.kernel_size}")
 
     def display(self):
         count_in_row = int(self.size / 10)

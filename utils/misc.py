@@ -2,25 +2,7 @@ import copy
 import numpy as np
 import cv2 as cv
 
-
-def check_and_convert_to_grayscale(image):
-    """
-    Конвертация в черн-белое, если изображение цветное
-    :param image: изображение
-    :return: ЧБ изображение
-    """
-    if len(image.shape) == 3:
-        return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    else:
-        return image
-
-
-def im2double(img):
-    result = np.double(img)
-    cv.normalize(result, result, 0.0, 1.0, cv.NORM_MINMAX)
-    return result
-
-
+# TODO: вынести
 def get_dark_channel(image, size):
     """
     Получить "темный" канал изображения
