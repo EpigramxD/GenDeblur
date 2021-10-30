@@ -1,57 +1,9 @@
 import os
-
 import cv2 as cv
-import imquality.brisque as brisque
 import numpy as np
-from numpy import linalg
-from skimage.metrics import structural_similarity, peak_signal_noise_ratio, mean_squared_error
-
-from utils.misc import grad_tv_1c
+import imquality.brisque as brisque
 from .imgUtils import ImgUtils
-
-
-def grad_quality(image):
-    """
-    Качество на основе градиента
-    :param image: оцениваемое изображение
-    :return: качество изображения
-    """
-    prepared_image = ImgUtils.to_grayscale(image)
-    sobel_x = cv.Sobel(prepared_image, cv.CV_64F, 1, 0)
-    sobel_y = cv.Sobel(prepared_image, cv.CV_64F, 0, 1)
-    FM = sobel_x * sobel_x + sobel_y * sobel_y
-    quality = cv.mean(FM)[0]
-    return quality
-
-
-def fourier_quality(img):
-    """
-    Качество на основе яркости образа Фурье
-    :param img: оцениваемое изображение
-    :return: качество изображения
-    """
-    prepared_image = ImgUtils.to_grayscale(img)
-    dft = ImgUtils.get_dft(prepared_image)
-    dft_magnitude = ImgUtils.get_dft_magnitude(dft)
-    quality = cv.mean(dft_magnitude)[0]
-    return quality
-
-
-def get_dark_quality(image, kernel_size):
-    """
-    Качество на основе "темного" канала изображения
-    :param image: оцениваемое изображение
-    :param kernel_size: размер ядра
-    :return: качество изображения
-    """
-    return -1 * np.max(ImgUtils.get_dark_channel(image, kernel_size))
-
-
-def grad_map_sim(image1, image2):
-    grad_image1 = cv.Laplacian(image1, cv.CV_32F)
-    grad_image2 = cv.Laplacian(image2, cv.CV_32F)
-    return -1 * np.sum(abs(grad_image1 - grad_image2))
-
+from skimage.metrics import structural_similarity, peak_signal_noise_ratio, mean_squared_error
 
 class DOM(object):
 
@@ -282,87 +234,141 @@ class DOM(object):
         self.edges(image, edge_threshold=edge_threshold)
         score = self.sharpness_measure(Im, width=width, sharpness_threshold=sharpness_threshold)
         return score
-dom = DOM()
 
+class ImgQuality(object):
+    __dom = DOM()
 
-def frob_metric(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
-    """
-    quality = x + y + z
-    x = (frob_norm(sharp_image * psf - blurred_image))^2
-    y = lamb*frob_norm(grad(sharp_image))
-    z = gam*frob_norm(grad(psf))
-    :param sharp_img:
-    :param blurred_img:
-    :param psf:
-    :param lamb:
-    :param gam:
-    :return:
-    """
-    psf_fft = np.fft.fft2(ImgUtils.pad_to_shape(psf, sharp_img.shape))
-    sharp_image_fft = np.fft.fft2(sharp_img.copy())
-    fft_mul = np.fft.ifft2(sharp_image_fft * psf_fft).real
-    fft_mul -= blurred_img
-    x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
-    y = cv.Laplacian(sharp_img, cv.CV_32F)
-    y = lamb * np.linalg.norm(y, 'fro')
-    z = gam * np.linalg.norm(psf, 'fro')
-    return -1.0 * (x + y + z)
+    @staticmethod
+    def __grad_quality(image):
+        """
+        Качество на основе градиента
+        :param image: оцениваемое изображение
+        :return: качество изображения
+        """
+        prepared_image = ImgUtils.to_grayscale(image)
+        sobel_x = cv.Sobel(prepared_image, cv.CV_64F, 1, 0)
+        sobel_y = cv.Sobel(prepared_image, cv.CV_64F, 0, 1)
+        FM = sobel_x * sobel_x + sobel_y * sobel_y
+        quality = cv.mean(FM)[0]
+        return quality
 
+    @staticmethod
+    def __fourier_quality(img):
+        """
+        Качество на основе яркости образа Фурье
+        :param img: оцениваемое изображение
+        :return: качество изображения
+        """
+        prepared_image = ImgUtils.to_grayscale(img)
+        dft = ImgUtils.get_dft(prepared_image)
+        dft_magnitude = ImgUtils.get_dft_magnitude(dft)
+        quality = cv.mean(dft_magnitude)[0]
+        return quality
 
-def frob_metric2(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
-    """
-    quality = x + y + z
-    x = (frob_norm(sharp_image * psf - blurred_image))^2
-    y = lamb*frob_norm(grad(sharp_image))
-    z = gam*frob_norm(grad(psf))
-    :param sharp_img:
-    :param blurred_img:
-    :param psf:
-    :param lamb:
-    :param gam:
-    :return:
-    """
-    psf_fft = np.fft.fft2(ImgUtils.im2double(ImgUtils.pad_to_shape(psf, sharp_img.shape)))
-    sharp_image_fft = np.fft.fft2(ImgUtils.im2double(sharp_img))
-    fft_mul = np.abs(np.fft.ifft2(sharp_image_fft * psf_fft))
-    fft_mul -= grad_tv_1c(blurred_img)
-    fft_mul = np.linalg.norm(fft_mul, 'fro')
-    # x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
-    # y = cv.Laplacian(sharp_img, cv.CV_32F)
-    # y = lamb * np.linalg.norm(y, 'fro')
-    # z = gam * np.linalg.norm(psf, 'fro')
-    return -1 * fft_mul
+    @staticmethod
+    def __get_dark_quality(img, kernel_size):
+        """
+        Качество на основе "темного" канала изображения
+        :param img: оцениваемое изображение
+        :param kernel_size: размер ядра
+        :return: качество изображения
+        """
+        return -1 * np.max(ImgUtils.get_dark_channel(img, kernel_size))
 
-def get_no_ref_quality(image, type):
-    """
-    Получить не-референсное качество по его типу
-    :param image: оцениваемое изображение
-    :param type: тип не-референсной метрики
-    :return: качество изображения
-    """
-    if type == "gradient":
-        return grad_quality(image)
-    elif type == "fourier":
-        return fourier_quality(image)
-    elif type == "dark":
-        return get_dark_quality(image, 10)
-    elif type == "dom":
-        return dom.get_sharpness(image)
-    elif type == "brisque":
-        return brisque.score(image)
+    @staticmethod
+    def __grad_map_sim(img1, img2):
+        """
+        Простенькое сходство двух градиентов изображений
+        :param img2: первое изображение
+        :param img2: второе изображение
+        :return: double - сходство двух градиентов
+        """
+        grad_image1 = cv.Laplacian(img1, cv.CV_32F)
+        grad_image2 = cv.Laplacian(img2, cv.CV_32F)
+        return -1 * np.sum(abs(grad_image1 - grad_image2))
 
+    # TODO: ваще не уверен
+    @staticmethod
+    def __frob_metric_simple(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
+        """
+        quality = x + y + z
+        x = (frob_norm(sharp_image * psf - blurred_image))^2
+        y = lamb*frob_norm(grad(sharp_image))
+        z = gam*frob_norm(grad(psf))
+        :param sharp_img: четкое изображение (восстановленное)
+        :param blurred_img: размытое изображение
+        :param psf: функция искажения
+        :param lamb: const1
+        :param gam: const2
+        :return:
+        """
+        psf_fft = np.fft.fft2(ImgUtils.pad_to_shape(psf, sharp_img.shape))
+        sharp_image_fft = np.fft.fft2(sharp_img.copy())
+        fft_mul = np.fft.ifft2(sharp_image_fft * psf_fft).real
+        fft_mul -= blurred_img
+        x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
+        y = cv.Laplacian(sharp_img, cv.CV_32F)
+        y = lamb * np.linalg.norm(y, 'fro')
+        z = gam * np.linalg.norm(psf, 'fro')
+        return -1.0 * (x + y + z)
 
-def get_ref_qualiy(image1, image2, type):
-    """
-    Получить референсное качество по его типу
-    :param image1: эталонное изображение
-    :param image2: оцениваемое изображение
-    :param type: тип метрики
-    :return: качество изображения
-    """
-    if type == "ssim":
-        return structural_similarity(image1, image2)
-    if type == "psnr":
-        return peak_signal_noise_ratio(image1, image2)
-    if type == "mse":
-        return mean_squared_error(image1, image2)
+    # TODO: ваще не уверен + доделать
+    @staticmethod
+    def frob_metric2(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
+        """
+        quality = x + y + z
+        x = (frob_norm(sharp_image * psf - blurred_image))^2
+        y = lamb*frob_norm(grad(sharp_image))
+        z = gam*frob_norm(grad(psf))
+        :param sharp_img:
+        :param blurred_img:
+        :param psf:
+        :param lamb:
+        :param gam:
+        :return:
+        """
+        psf_fft = np.fft.fft2(ImgUtils.im2double(ImgUtils.pad_to_shape(psf, sharp_img.shape)))
+        sharp_image_fft = np.fft.fft2(ImgUtils.im2double(sharp_img))
+        fft_mul = np.abs(np.fft.ifft2(sharp_image_fft * psf_fft))
+        fft_mul -= ImgUtils.grad_tv(blurred_img)
+        fft_mul = np.linalg.norm(fft_mul, 'fro')
+        # x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
+        # y = cv.Laplacian(sharp_img, cv.CV_32F)
+        # y = lamb * np.linalg.norm(y, 'fro')
+        # z = gam * np.linalg.norm(psf, 'fro')
+        return -1 * fft_mul
+
+    @staticmethod
+    def get_ref_quality(img1, img2, type):
+        """
+        Получить референсное качество по его типу
+        :param image1: эталонное изображение
+        :param image2: оцениваемое изображение
+        :param type: тип метрики
+        :return: качество изображения
+        """
+        if type == "ssim":
+            return structural_similarity(img1, img2)
+        if type == "psnr":
+            return peak_signal_noise_ratio(img1, img2)
+        if type == "mse":
+            return mean_squared_error(img1, img2)
+
+    @staticmethod
+    def get_no_ref_quality(img, type):
+        """
+        Получить не-референсное качество по его типу
+        :param image: оцениваемое изображение
+        :param type: тип не-референсной метрики
+        :return: качество изображения
+        """
+        if type == "gradient":
+            return ImgQuality.__grad_quality(img)
+        elif type == "fourier":
+            return ImgQuality.__fourier_quality(img)
+        elif type == "dark":
+            return ImgQuality.__get_dark_quality(img, 10)
+        elif type == "dom":
+            return ImgQuality.__dom.get_sharpness(img)
+        elif type == "brisque":
+            return brisque.score(img)

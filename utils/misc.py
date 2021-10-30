@@ -98,13 +98,9 @@ def grad_tv_1c(img, epsilon=1e-3):
     return result
 
 
-def grad_tv_3c(img, epsilon=1e-3):
+def grad_tv(img, epsilon=1e-3):
     result = np.zeros(img.shape, np.double)
     for c in range(0, img.shape[2], 1):
         channel = copy.copy(img[:, :, c])
         result[:, :, c] = grad_tv_1c(channel, epsilon)
     return result
-
-
-def grad_tv(img, epsilon=1e-3):
-    pass
