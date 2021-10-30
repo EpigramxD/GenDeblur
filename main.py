@@ -2,7 +2,7 @@ from utils.deconv import *
 from utils.metric import *
 from utils.misc import *
 from utils.imgUtils import ImgUtils
-
+from utils.imgQuality import ImgQuality
 
 # image = cv.imread("images/blurred/noisy.jpg", cv.IMREAD_COLOR)
 # image = im2double(image)
@@ -60,5 +60,5 @@ result = np.ubyte(result)
 
 cv.imshow("result", result)
 result_dft = display_dft(result, "result_dft")
-print(get_ref_qualiy(result_dft, sharp_dft, "psnr"))
+print(ImgQuality.get_ref_qualiy(result_dft, sharp_dft, "psnr"))
 cv.waitKey()
