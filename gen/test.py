@@ -7,6 +7,7 @@ from scipy.optimize import Bounds
 from utils.freq_domain_utils import *
 from utils.drawing import *
 from utils.size_utils import *
+from utils.filteringUtils import FilteringUtils
 
 KERNEL_SIZE = 9
 
@@ -65,9 +66,9 @@ cv.normalize(image, image, 0.0, 1.0, cv.NORM_MINMAX)
 psf = cv.imread("../images/psfs/1.png", cv.IMREAD_GRAYSCALE)
 psf = np.float32(psf)
 cv.normalize(psf, psf, 0.0, 1.0, cv.NORM_MINMAX)
-psf = pad_to_shape(psf, image.shape)
+psf = FilteringUtils.pad_to_shape(psf, image.shape)
 
-blurred = freq_filter_1c(image, psf)
+blurred = FilteringUtils.freq_filter(image, psf)
 cv.normalize(blurred, blurred, 0.0, 255.0, cv.NORM_MINMAX)
 cv.imwrite("../images/blurred/3.png", blurred)
 

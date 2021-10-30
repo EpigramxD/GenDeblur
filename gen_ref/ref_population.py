@@ -4,7 +4,6 @@ from utils.deconv import do_deconv
 from utils.metric import frob_metric, frob_metric2
 from utils.metric import get_no_ref_quality, get_ref_qualiy
 from utils.size_utils import *
-import sewar
 
 class RefPopulation:
     """

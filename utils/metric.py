@@ -1,16 +1,15 @@
-import copy
-import math
-import cv2 as cv
-from numpy import linalg
-import numpy as np
-import imquality.brisque as brisque
 import os
-from utils.misc import grad_tv_1c, im2double
-from utils.size_utils import pad_to_shape
-from .misc import check_and_convert_to_grayscale
-from .freq_domain_utils import get_dft, get_dft_magnitude
+
+import cv2 as cv
+import imquality.brisque as brisque
+import numpy as np
+from numpy import linalg
 from skimage.metrics import structural_similarity, peak_signal_noise_ratio, mean_squared_error
+
+from utils.misc import grad_tv_1c, im2double
+from .misc import check_and_convert_to_grayscale
 from .misc import get_dark_channel
+from .filteringUtils import FilteringUtils
 
 
 def grad_quality(image):
@@ -27,15 +26,15 @@ def grad_quality(image):
     return quality
 
 
-def fourier_quality(image):
+def fourier_quality(img):
     """
     Качество на основе яркости образа Фурье
-    :param image: оцениваемое изображение
+    :param img: оцениваемое изображение
     :return: качество изображения
     """
-    prepared_image = check_and_convert_to_grayscale(copy.deepcopy(image))
-    dft = get_dft(prepared_image)
-    dft_magnitude = get_dft_magnitude(dft)
+    prepared_image = FilteringUtils.to_grayscale(img)
+    dft = FilteringUtils.get_dft(prepared_image)
+    dft_magnitude = FilteringUtils.get_dft_magnitude(dft)
     quality = cv.mean(dft_magnitude)[0]
     return quality
 
@@ -301,7 +300,7 @@ def frob_metric(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
     :param gam:
     :return:
     """
-    psf_fft = np.fft.fft2(pad_to_shape(psf, sharp_img.shape))
+    psf_fft = np.fft.fft2(FilteringUtils.pad_to_shape(psf, sharp_img.shape))
     sharp_image_fft = np.fft.fft2(sharp_img.copy())
     fft_mul = np.fft.ifft2(sharp_image_fft * psf_fft).real
     fft_mul -= blurred_img
@@ -325,7 +324,7 @@ def frob_metric2(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
     :param gam:
     :return:
     """
-    psf_fft = np.fft.fft2(im2double(pad_to_shape(psf, sharp_img.shape)))
+    psf_fft = np.fft.fft2(im2double(FilteringUtils.pad_to_shape(psf, sharp_img.shape)))
     sharp_image_fft = np.fft.fft2(im2double(sharp_img))
     fft_mul = np.abs(np.fft.ifft2(sharp_image_fft * psf_fft))
     fft_mul -= grad_tv_1c(blurred_img)

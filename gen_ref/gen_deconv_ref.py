@@ -3,16 +3,15 @@ from gen.mutation import *
 from gen.selection import *
 from gen_ref.ref_population import RefPopulation
 from utils.deconv import do_wiener_deconv_1c
-from utils.misc import *
-from utils.drawing import *
 from utils.size_utils import *
+from utils.filteringUtils import FilteringUtils
 
 # константы
-STAGNATION_POPULATION_COUNT = 30
+STAGNATION_POPULATION_COUNT = 15
 UPSCALE_TYPE = "pad"
 NO_REF_METRIC = "fourier"
 REF_METRIC = "ssim"
-DECONV_TYPE = "LR"
+DECONV_TYPE = "wiener"
 CROSSOVER_PROBABILITY = 0.9
 MUTATION_PROBABILITY = 0.1
 POS_PROBABILITY = 0.5
@@ -140,8 +139,8 @@ sharp = np.float32(sharp)
 cv.normalize(sharp, sharp, 0.0, 1.0, cv.NORM_MINMAX)
 
 psf = cv.imread("../images/psfs/2.png", cv.IMREAD_GRAYSCALE)
-psf = pad_to_shape(psf, sharp.shape)
-blurred = freq_filter_1c(sharp, psf)
+psf = FilteringUtils.pad_to_shape(psf, sharp.shape)
+blurred = FilteringUtils.freq_filter(sharp, psf)
 cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
 
 # генетика
