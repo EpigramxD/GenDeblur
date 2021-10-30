@@ -3,15 +3,16 @@ from gen.mutation import *
 from gen.selection import *
 from gen_ref.ref_population import RefPopulation
 from utils.deconv import do_wiener_deconv_1c
+from utils.misc import *
 from utils.drawing import *
 from utils.size_utils import *
 
 # константы
-STAGNATION_POPULATION_COUNT = 15
+STAGNATION_POPULATION_COUNT = 30
 UPSCALE_TYPE = "pad"
 NO_REF_METRIC = "fourier"
 REF_METRIC = "ssim"
-DECONV_TYPE = "wiener"
+DECONV_TYPE = "LR"
 CROSSOVER_PROBABILITY = 0.9
 MUTATION_PROBABILITY = 0.1
 POS_PROBABILITY = 0.5
@@ -133,26 +134,21 @@ def gen_deblur_image(sharp, blurred, kernel_size=23, elite_count=1, display_proc
 
 
 # четкое изображение
-sharp = cv.imread("../images/sharp/3.png", cv.IMREAD_GRAYSCALE)
+sharp = cv.imread("../images/sharp/bstu2.jpg", cv.IMREAD_GRAYSCALE)
 #sharp = sharp ** (1/2.2)
 sharp = np.float32(sharp)
 cv.normalize(sharp, sharp, 0.0, 1.0, cv.NORM_MINMAX)
 
-# делаем линию
-#line = draw_line(sharp.shape, 22, 45)
-#line = np.float32(line)
-line = cv.imread("../images/psfs/1.png", cv.IMREAD_GRAYSCALE)
-line = pad_to_shape(line, sharp.shape)
-# искажаем изображение
-blurred = freq_filter_1c(sharp, line)
+psf = cv.imread("../images/psfs/2.png", cv.IMREAD_GRAYSCALE)
+psf = pad_to_shape(psf, sharp.shape)
+blurred = freq_filter_1c(sharp, psf)
 cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
-cv.imshow("blurred", blurred)
 
 # генетика
-result = gen_deblur_image(sharp, blurred, display_process=True)
+result = gen_deblur_image(sharp, blurred, display_process=False)
 
 # вывод результата
-cv.imshow("fiunal_result", result)
+#cv.imshow("fiunal_result", result)
 
 print("FINISHED!")
 cv.waitKey()

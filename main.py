@@ -1,6 +1,6 @@
-
 import cv2 as cv
 import cv2.quality as q
+from copy import copy as cp
 import imquality.brisque as brisque
 from skimage.metrics import structural_similarity as ssim
 import numpy as np
@@ -8,61 +8,65 @@ from skimage import color, data, restoration
 from utils.drawing import draw_line
 from utils.metric import *
 from utils.misc import *
+from numpy import linalg as LA
 from utils.deconv import *
 
-image = cv.imread("D:\Images\IMGS\pic6.jpg", cv.IMREAD_GRAYSCALE)
-image = np.float32(image)
-cv.normalize(image, image, 0.0, 1.0, cv.NORM_MINMAX)
 
-line = draw_line((23, 23), 22, 45)
-cv.imshow("line", line)
-restored_image1 = do_RL_deconv(image, line, iterations=15)
-cv.normalize(restored_image1, restored_image1, 0, 255, cv.NORM_MINMAX)
-restored_image1 = np.uint8(restored_image1)
-cv.imshow("restored_image1", restored_image1)
+# image = cv.imread("images/blurred/noisy.jpg", cv.IMREAD_COLOR)
+# image = im2double(image)
+
+# image = np.array([
+#     [[1,2,3],[4,5,6],[7,8,9],[10,11,12],[13,14,15]],
+#     [[16,17,18],[19,20,21],[22,23,24],[25,26,27],[28,29,30]],
+#     [[31,32,33],[34,35,36],[37,38,39],[40,41,42],[43,44,45]],
+# ])
+
+def display_dft(image, window_name):
+    fourier_image = np.fft.fft2(image)
+    magnitude = np.float32(np.log(1 + np.abs(fourier_image)))
+    magnitude_to_show = np.zeros(magnitude.shape, np.float32)
+    cv.normalize(magnitude, magnitude_to_show, 0, 255, cv.NORM_MINMAX)
+    magnitude_to_show = np.ubyte(magnitude_to_show)
+    magnitude_to_show = np.fft.fftshift(magnitude_to_show)
+    cv.imshow(window_name, magnitude_to_show)
+    return magnitude_to_show
+
+
+sharp = cv.imread("images/sharp/bstu2.jpg", cv.IMREAD_GRAYSCALE)
+sharp = im2double(sharp)
+sharp_dft = display_dft(sharp, "sharp_dft")
+
+psf = cv.imread("images/psfs/2.png", cv.IMREAD_GRAYSCALE)
+
+# подгон psf под размеры изображения
+center_y = int(sharp.shape[0] / 2)
+center_x = int(sharp.shape[1] / 2)
+
+half_height = int(psf.shape[0] / 2)
+half_width = int(psf.shape[1] / 2)
+
+x_index_from = center_x - half_width
+x_index_to = center_x + psf.shape[1] - half_width
+
+y_index_from = center_y - half_height
+y_index_to = center_y + psf.shape[0] - half_height
+
+psf_resized = np.zeros(sharp.shape, np.double)
+psf_resized[y_index_from:y_index_to, x_index_from:x_index_to] = psf.copy()
+psf_resized = im2double(psf_resized)
+
+# фильтрация
+image_fft = np.fft.fft2(sharp)
+psf_fft = np.fft.fft2(psf_resized)
+
+fft_mul = image_fft * psf_fft
+fft_mul = ifft2(fft_mul).real
+fft_mul = np.fft.fftshift(fft_mul)
+result = np.zeros(fft_mul.shape)
+cv.normalize(fft_mul, result, 0, 255, cv.NORM_MINMAX)
+result = np.ubyte(result)
+
+cv.imshow("result", result)
+result_dft = display_dft(result, "result_dft")
+print(get_ref_qualiy(result_dft, sharp_dft, "psnr"))
 cv.waitKey()
-
-
-#
-# resized_image = cv.resize(image, None, fx=0.5, fy=0.5, interpolation=cv.INTER_CUBIC)
-# cv.imshow("resized_image", resized_image)
-#
-# resized_line = cv.resize(line, None, fx=10, fy=10, interpolation=cv.INTER_CUBIC)
-# cv.imshow("resized_line", resized_line)
-# resized_line2 = cv.resize(resized_line, None, fx=0.5, fy=0.5, interpolation=cv.INTER_CUBIC)
-# cv.imshow("resized_line2", resized_line2)
-# cv.waitKey()
-
-# data frame for writing stats in excel file
-# df = {'angle': [], 'length': [], 'quality': []}
-
-# for i in range(0, 180, 5):
-#     for j in range(3, 25, 1):
-#         print(f"Progress: {i}:{j}")
-#         line1 = draw_line((23, 23), j, i)
-#         restored_image1 = do_RL_deconv_3c(image, line1, iterations=1)
-#         #quality = get_quality(restored_image1, type="dark")
-#         #ssim_measure = ssim(to_grayscale(image), to_grayscale(restored_image1))
-#         quality = brisque.score(restored_image1)
-#         df['angle'].append(i)
-#         df['length'].append(j)
-#         df['quality'].append(quality)
-#
-# df = pd.DataFrame(df)
-# df.to_excel('D:/dark_test.xlsx')
-
-
-# line = draw_line((23, 23), best_length, best_angle)
-# restored_image1 = do_RL_deconv_1c(image, line, iterations=15)
-# cv.normalize(restored_image1, restored_image1, 0, 255, cv.NORM_MINMAX)
-# restored_image1 = np.uint8(restored_image1)
-# cv.imshow("restored_image1", restored_image1)
-# cv.waitKey()
-
-
-# restored_image2 = do_RL_deconv_3c(image, line2, iterations=15)
-# cv.normalize(restored_image2, restored_image2, 0, 255, cv.NORM_MINMAX)
-# restored_image2 = np.uint8(restored_image2)
-# cv.imshow("restored_image2", restored_image2)
-# quality2 = get_quality(restored_image2, type="dark")
-# print("quality2: ", quality2)

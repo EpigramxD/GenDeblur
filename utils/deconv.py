@@ -5,7 +5,7 @@ from utils.size_utils import *
 from utils.metric import *
 
 
-def do_RL_deconv_1c(image, psf, iterations, clip=True):
+def do_RL_deconv_1c(image, psf, iterations, clip=False):
     """
     Метод Люси-Ричардсона для 1 канала
     :param image: изображение
@@ -17,7 +17,7 @@ def do_RL_deconv_1c(image, psf, iterations, clip=True):
     if len(image.shape) == 2:
         image_ = np.float32(image)
         cv.normalize(image_, image_, 0.0, 1.0, cv.NORM_MINMAX)
-        result = restoration.richardson_lucy(image_, psf.copy(), iterations=iterations, clip=clip)
+        result = restoration.richardson_lucy(image_, psf.copy(), iterations=iterations, clip=clip, filter_epsilon=0.01)
         result = np.float32(result)
         cv.normalize(result, result, alpha=0.0, beta=1.0, norm_type=cv.NORM_MINMAX)
         return result
@@ -102,6 +102,6 @@ def do_deconv(image, psf, type):
     if type == "wiener":
         return do_wiener_deconv_1c(image, psf, 1)
     elif type == "LR":
-        return do_RL_deconv_1c(image, psf, iterations=10)
+        return do_RL_deconv_1c(image, psf, iterations=9)
     elif type == "divide":
         return do_divide_deconv(image, psf)

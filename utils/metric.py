@@ -1,10 +1,12 @@
 import copy
 import math
-import cpbd
 import cv2 as cv
+from numpy import linalg
 import numpy as np
 import imquality.brisque as brisque
 import os
+from utils.misc import grad_tv_1c, im2double
+from utils.size_utils import pad_to_shape
 from .misc import check_and_convert_to_grayscale
 from .freq_domain_utils import get_dft, get_dft_magnitude
 from skimage.metrics import structural_similarity, peak_signal_noise_ratio, mean_squared_error
@@ -286,6 +288,54 @@ class DOM(object):
 dom = DOM()
 
 
+def frob_metric(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
+    """
+    quality = x + y + z
+    x = (frob_norm(sharp_image * psf - blurred_image))^2
+    y = lamb*frob_norm(grad(sharp_image))
+    z = gam*frob_norm(grad(psf))
+    :param sharp_img:
+    :param blurred_img:
+    :param psf:
+    :param lamb:
+    :param gam:
+    :return:
+    """
+    psf_fft = np.fft.fft2(pad_to_shape(psf, sharp_img.shape))
+    sharp_image_fft = np.fft.fft2(sharp_img.copy())
+    fft_mul = np.fft.ifft2(sharp_image_fft * psf_fft).real
+    fft_mul -= blurred_img
+    x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
+    y = cv.Laplacian(sharp_img, cv.CV_32F)
+    y = lamb * np.linalg.norm(y, 'fro')
+    z = gam * np.linalg.norm(psf, 'fro')
+    return -1.0 * (x + y + z)
+
+
+def frob_metric2(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
+    """
+    quality = x + y + z
+    x = (frob_norm(sharp_image * psf - blurred_image))^2
+    y = lamb*frob_norm(grad(sharp_image))
+    z = gam*frob_norm(grad(psf))
+    :param sharp_img:
+    :param blurred_img:
+    :param psf:
+    :param lamb:
+    :param gam:
+    :return:
+    """
+    psf_fft = np.fft.fft2(im2double(pad_to_shape(psf, sharp_img.shape)))
+    sharp_image_fft = np.fft.fft2(im2double(sharp_img))
+    fft_mul = np.abs(np.fft.ifft2(sharp_image_fft * psf_fft))
+    fft_mul -= grad_tv_1c(blurred_img)
+    fft_mul = np.linalg.norm(fft_mul, 'fro')
+    # x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
+    # y = cv.Laplacian(sharp_img, cv.CV_32F)
+    # y = lamb * np.linalg.norm(y, 'fro')
+    # z = gam * np.linalg.norm(psf, 'fro')
+    return -1 * fft_mul
+
 def get_no_ref_quality(image, type):
     """
     Получить не-референсное качество по его типу
@@ -303,8 +353,6 @@ def get_no_ref_quality(image, type):
         return dom.get_sharpness(image)
     elif type == "brisque":
         return brisque.score(image)
-    elif type == "cpbd":
-        return cpbd.compute(image)
 
 
 def get_ref_qualiy(image1, image2, type):
@@ -316,8 +364,8 @@ def get_ref_qualiy(image1, image2, type):
     :return: качество изображения
     """
     if type == "ssim":
-        return math.log(structural_similarity(image1, image2))
+        return structural_similarity(image1, image2)
     if type == "psnr":
-        return math.log(peak_signal_noise_ratio(image1, image2))
+        return peak_signal_noise_ratio(image1, image2)
     if type == "mse":
-        return math.log(mean_squared_error(image1, image2))
+        return mean_squared_error(image1, image2)

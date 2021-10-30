@@ -1,9 +1,10 @@
 from gen.individual import Individual
 from gen.mutation import mutate
 from utils.deconv import do_deconv
+from utils.metric import frob_metric, frob_metric2
 from utils.metric import get_no_ref_quality, get_ref_qualiy
 from utils.size_utils import *
-
+import sewar
 
 class RefPopulation:
     """
@@ -42,7 +43,10 @@ class RefPopulation:
         """
         for individual in self.individuals:
             deblurred_image = do_deconv(self.blurred, individual.psf, self.deconv_type)
-            individual.score = get_ref_qualiy(self.sharp, deblurred_image, self.ref_metric) + get_no_ref_quality(deblurred_image, self.no_ref_metric)
+
+            individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) + get_ref_qualiy(self.sharp, deblurred_image, self.ref_metric)
+            #individual.score = frob_metric2(deblurred_image, self.blurred, individual.psf)
+            #individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.sharp, deblurred_image, self.ref_metric)
         self.individuals.sort(key=lambda x: x.score, reverse=True)
 
     def __update_pop_size(self, multiplier=10):
@@ -51,7 +55,7 @@ class RefPopulation:
         :param multiplier: множитель (во сколько раз должна увеличиться популяция)
         :return:
         """
-        self.size = self.kernel_size * multiplier
+        self.size = int(self.kernel_size * multiplier)
         print("POPULATION SIZE UPDATED")
 
     def __expand_population(self):
