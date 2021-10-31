@@ -1,9 +1,8 @@
-from gen.crossover import *
-from gen.mutation import *
-from gen.selection import *
 from gen_ref.ref_population import PopulationRef
 from utils.imgDeconv import ImgDeconv
 from utils.size_utils import *
+from gen.selectionOperators import SelectionOperators
+from gen.crossoverOperators import CrossoverOperators
 
 # константы
 STAGNATION_POPULATION_COUNT = 15
@@ -18,7 +17,7 @@ SMART_MUTATION = True
 
 
 def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=23, elite_count=1, display_process=False):
-    population = PopulationRef(sharp, blurred, min_kernel_size, step, max_kernel_size, NO_REF_METRIC, REF_METRIC, DECONV_TYPE)
+    population = PopulationRef(sharp, blurred, min_kernel_size, step, max_kernel_size)
     best_quality_in_pop = -10000.0
     upscale_flag = 0
     best_ever_kernel = np.zeros(sharp.shape)
@@ -30,7 +29,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
                 upscale_flag = 0
                 break
 
-            population.fit()
+            population.fit(NO_REF_METRIC, REF_METRIC, DECONV_TYPE)
 
             if display_process:
                 cv.imshow("best kernel resized", cv.resize(copy.deepcopy(population.individuals[0].psf), None, fx=10, fy=10, interpolation=cv.INTER_AREA))
@@ -48,13 +47,23 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
                 best_kernels.append(copy.deepcopy(population.individuals[0].psf))
                 upscale_flag = 0
 
-            elite_individuals = copy.deepcopy(population.individuals[:elite_count])
-            non_elite_individuals = copy.deepcopy(population.individuals[elite_count:])
-            selected_individuals = select_tournament(non_elite_individuals, k=len(non_elite_individuals))
-            crossed_individuals = uniform_crossover(selected_individuals, probability=CROSSOVER_PROBABILITY)
-            new_individuals = mutate(crossed_individuals, probability=MUTATION_PROBABILITY, add_prob=POS_PROBABILITY, use_smart=SMART_MUTATION)
+            # селекция и скрещивание
+            elite_individuals, non_elite_individuals = population.get_elite_non_elite(elite_count)
+            selected_individuals = SelectionOperators.select_tournament(non_elite_individuals, k=len(non_elite_individuals))
+            crossed_individuals = CrossoverOperators.uniform_crossover(selected_individuals, probability=CROSSOVER_PROBABILITY)
+
+            # мутация
+            mutated_individuals = copy.deepcopy(crossed_individuals[:])
+            if SMART_MUTATION:
+                for ind in mutated_individuals:
+                    ind.mutate_smart(MUTATION_PROBABILITY, POS_PROBABILITY)
+            else:
+                for ind in mutated_individuals:
+                    ind.mutate(MUTATION_PROBABILITY, POS_PROBABILITY)
+
+            # обновление особей популяции
             population.individuals.clear()
-            population.individuals.extend(copy.deepcopy(new_individuals))
+            population.individuals.extend(copy.deepcopy(mutated_individuals))
             population.individuals.extend(copy.deepcopy(elite_individuals))
             upscale_flag += 1
 
@@ -81,9 +90,9 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
 
 
-            result_file_name = "../images/results/restored_size_{}.jpg".format(population.kernel_size)
-            blurred_file_name = "../images/results/blurred_size_{}.jpg".format(population.kernel_size)
-            kernel_file_name = "../images/results/kernel_size_{}.jpg".format(population.kernel_size)
+            result_file_name = "../images/results/restored_size_{}.jpg".format(population.current_psf_size)
+            blurred_file_name = "../images/results/blurred_size_{}.jpg".format(population.current_psf_size)
+            kernel_file_name = "../images/results/kernel_size_{}.jpg".format(population.current_psf_size)
 
             cv.imwrite(result_file_name, best_result_for_size)
             cv.imwrite(kernel_file_name, best_kernel_for_size)
@@ -106,7 +115,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             # cv.imshow("xd_test", cv.resize(xd_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
 
             # ЗАПИСЬ
-            population.fit()
+            population.fit(NO_REF_METRIC, REF_METRIC, DECONV_TYPE)
             best_result_for_size = ImgDeconv.do_deconv(population.blurred, population.individuals[0].psf, type="wiener")
             cv.normalize(best_result_for_size, best_result_for_size, 0.0, 255.0, cv.NORM_MINMAX)
 
@@ -118,9 +127,9 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             blurred_normalized = copy.deepcopy(population.blurred)
             cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
 
-            result_file_name = "../images/results/restored_size_{}.jpg".format(population.kernel_size)
-            blurred_file_name = "../images/results/blurred_size_{}.jpg".format(population.kernel_size)
-            kernel_file_name = "../images/results/kernel_size_{}.jpg".format(population.kernel_size)
+            result_file_name = "../images/results/restored_size_{}.jpg".format(population.current_psf_size)
+            blurred_file_name = "../images/results/blurred_size_{}.jpg".format(population.current_psf_size)
+            kernel_file_name = "../images/results/kernel_size_{}.jpg".format(population.current_psf_size)
 
             cv.imwrite(result_file_name, best_result_for_size)
             cv.imwrite(kernel_file_name, best_kernel_for_size)

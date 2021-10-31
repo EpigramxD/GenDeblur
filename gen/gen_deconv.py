@@ -2,10 +2,10 @@ from gen.crossover import *
 from gen.mutation import *
 from gen.population import Population
 from gen.selection import *
-from utils.deconv import do_wiener_deconv_1c
-from utils.size_utils import *
 from utils.imgDeconv import ImgDeconv
-
+from utils.size_utils import *
+from .selectionOperators import SelectionOperators
+from .crossoverOperators import CrossoverOperators
 # константы
 STAGNATION_POPULATION_COUNT = 200
 UPSCALE_TYPE = "pad"
@@ -36,9 +36,9 @@ def gen_deblur_image(image, kernel_size=23, metric_type="fourier", elite_count=0
 
             elite_individuals = copy.deepcopy(population.individuals[:elite_count])
             non_elite_individuals = copy.deepcopy(population.individuals[elite_count:])
-            selected_individuals = select_tournament(non_elite_individuals, len(non_elite_individuals))
-            crossed_individuals = uniform_crossover(selected_individuals, probability=CROSSOVER_PROBABILITY)
-            new_individuals = mutate(crossed_individuals, probability=MUTATION_PROBABILITY)
+            selected_individuals = SelectionOperators.select_tournament(non_elite_individuals, len(non_elite_individuals))
+            crossed_individuals = CrossoverOperators.uniform_crossover(selected_individuals, probability=CROSSOVER_PROBABILITY)
+            #new_individuals = mutate(crossed_individuals, probability=MUTATION_PROBABILITY)
             population.individuals.clear()
             population.individuals.extend(copy.deepcopy(new_individuals))
             population.individuals.extend(copy.deepcopy(elite_individuals))
