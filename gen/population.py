@@ -1,8 +1,9 @@
 from gen.individual import Individual
 from gen.mutation import mutate
-from utils.deconv import do_RL_deconv, do_wiener_deconv_1c
+from utils.imgDeconv import ImgDeconv
 from utils.imgQuality import ImgQuality
 from utils.size_utils import *
+
 
 class Population:
     """
@@ -39,9 +40,9 @@ class Population:
         """
         for individual in self.individuals:
             if deconvolution_type == "weiner":
-                deblurred_image = do_wiener_deconv_1c(self.image, individual.psf, 1000)
+                deblurred_image = ImgDeconv.do_deconv(self.image, individual.psf, type="wiener")
             elif deconvolution_type == "LR":
-                deblurred_image = do_RL_deconv(self.image, individual.psf, iterations=1)
+                deblurred_image = ImgDeconv.do_deconv(self.image, individual.psf, type="LR", iterations=1, clip=True)
             # обрезка краев, чтобы не портили оценку
             #deblurred_image = crop_image(deblurred_image, int(deblurred_image.shape[1]/10), int(deblurred_image.shape[0]/10))
             individual.score = ImgQuality.get_no_ref_quality(deblurred_image, self.metric_type) #- np.count_nonzero(individual.psf)

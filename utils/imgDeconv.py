@@ -43,21 +43,6 @@ class ImgDeconv(object):
         return result
 
     @staticmethod
-    def __do_divide_deconv(img, psf):
-        image_cpy = copy.deepcopy(img)
-        image_fft = np.fft.fft2(image_cpy)
-
-        psf_cpy = copy.deepcopy(psf)
-        psf_cpy = ImgUtils.pad_to_shape(psf, img.shape)
-        psf_fft = np.fft.fft2(psf_cpy)
-
-        result_psf = image_fft / psf_fft
-        result = np.abs(np.fft.ifft2(result_psf))
-        result_normalized = np.zeros(result.shape, np.float32)
-        cv.normalize(result, result_normalized, 0.0, 1.0, cv.NORM_MINMAX)
-        return result_normalized
-
-    @staticmethod
     def __do_wiener_deconv_1c(img, psf, K):
         """
         Фильтр Винера для одного канала
@@ -93,6 +78,21 @@ class ImgDeconv(object):
         result = cv.merge(channels)
         result = ImgUtils.im2double(result)
         return result
+
+    @staticmethod
+    def __do_divide_deconv(img, psf):
+        image_cpy = copy.deepcopy(img)
+        image_fft = np.fft.fft2(image_cpy)
+
+        psf_cpy = copy.deepcopy(psf)
+        psf_cpy = ImgUtils.pad_to_shape(psf, img.shape)
+        psf_fft = np.fft.fft2(psf_cpy)
+
+        result_psf = image_fft / psf_fft
+        result = np.abs(np.fft.ifft2(result_psf))
+        result_normalized = np.zeros(result.shape, np.float32)
+        cv.normalize(result, result_normalized, 0.0, 1.0, cv.NORM_MINMAX)
+        return result_normalized
 
     @staticmethod
     def do_deconv(image, psf, type, **kwargs):

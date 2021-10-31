@@ -1,6 +1,6 @@
 from gen.individual import Individual
 from gen.mutation import mutate
-from utils.deconv import do_deconv
+from utils.imgDeconv import ImgDeconv
 from utils.imgQuality import ImgQuality
 from utils.scalePyramid import ScalePyramidRef
 from utils.size_utils import *
@@ -37,7 +37,7 @@ class PopulationRef:
         Оценка приспособленностей особей популяции
         """
         for individual in self.individuals:
-            deblurred_image = do_deconv(self.blurred, individual.psf, self.deconv_type)
+            deblurred_image = ImgDeconv.do_deconv(self.blurred, individual.psf, self.deconv_type)
 
             individual.score = ImgQuality.get_no_ref_quality(deblurred_image, self.no_ref_metric) + ImgQuality.get_ref_quality(self.sharp, deblurred_image, self.ref_metric)
             #individual.score = frob_metric2(deblurred_image, self.blurred, individual.psf)

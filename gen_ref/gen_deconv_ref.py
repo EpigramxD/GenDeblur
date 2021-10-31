@@ -2,7 +2,7 @@ from gen.crossover import *
 from gen.mutation import *
 from gen.selection import *
 from gen_ref.ref_population import PopulationRef
-from utils.deconv import do_wiener_deconv_1c
+from utils.imgDeconv import ImgDeconv
 from utils.size_utils import *
 
 # константы
@@ -35,7 +35,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             if display_process:
                 cv.imshow("best kernel resized", cv.resize(copy.deepcopy(population.individuals[0].psf), None, fx=10, fy=10, interpolation=cv.INTER_AREA))
                 cv.imshow("best ever kernel", cv.resize(best_ever_kernel, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
-                cv.imshow("best restored", do_wiener_deconv_1c(population.blurred, population.individuals[0].psf, 0.01))
+                cv.imshow("best restored", ImgDeconv.do_deconv(population.blurred, population.individuals[0].psf, type="wiener"))
                 cv.imshow("sharp", population.sharp)
                 cv.imshow("blurred", population.blurred)
                 cv.waitKey(1)
@@ -69,7 +69,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             # cv.imshow("xd_test", cv.resize(xd_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
 
             # ЗАПИСЬ
-            best_result_for_size = do_wiener_deconv_1c(population.blurred, population.individuals[0].psf, 0.01)
+            best_result_for_size = ImgDeconv.do_deconv(population.blurred, population.individuals[0].psf, type="wiener")
             cv.normalize(best_result_for_size, best_result_for_size, 0.0, 255.0, cv.NORM_MINMAX)
 
             lel_test = copy.deepcopy(population.individuals[0].psf)
@@ -107,7 +107,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
 
             # ЗАПИСЬ
             population.fit()
-            best_result_for_size = do_wiener_deconv_1c(population.blurred, population.individuals[0].psf, 0.01)
+            best_result_for_size = ImgDeconv.do_deconv(population.blurred, population.individuals[0].psf, type="wiener")
             cv.normalize(best_result_for_size, best_result_for_size, 0.0, 255.0, cv.NORM_MINMAX)
 
             lel_test = copy.deepcopy(population.individuals[0].psf)
@@ -127,8 +127,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             cv.imwrite(blurred_file_name, blurred_normalized)
             # ЗАПИСЬ
 
-    best_psf = population.individuals[0].psf
-    return do_wiener_deconv_1c(population.blurred, best_psf, 0.01)
+    return ImgDeconv.do_deconv(population.blurred, population.individuals[0].psf, type="wiener")
 
 
 # четкое изображение

@@ -4,6 +4,7 @@ from gen.population import Population
 from gen.selection import *
 from utils.deconv import do_wiener_deconv_1c
 from utils.size_utils import *
+from utils.imgDeconv import ImgDeconv
 
 # константы
 STAGNATION_POPULATION_COUNT = 200
@@ -25,7 +26,7 @@ def gen_deblur_image(image, kernel_size=23, metric_type="fourier", elite_count=0
                 break
             population.fit(DECONV_TYPE)
             cv.imshow("best kernel resized", cv.resize(copy.deepcopy(population.individuals[0].psf), None, fx=10, fy=10, interpolation=cv.INTER_AREA))
-            cv.imshow("best restored", do_wiener_deconv_1c(population.image, population.individuals[0].psf, 100))
+            cv.imshow("best restored", ImgDeconv.do_deconv(population.image, population.individuals[0].psf, type="wiener"))
             print(f"best quality in pop: {population.individuals[0].score}, best quality ever: {best_quality_in_pop}")
             cv.waitKey(10)
 
