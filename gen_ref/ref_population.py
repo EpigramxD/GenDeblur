@@ -17,26 +17,47 @@ class PopulationRef:
         :param deconv_type: вид инверсной фильтрации
         """
         # текущий размер ядра
-        self.current_psf_size = min_kernel_size
-        self.scale_pyramid = ScalePyramidRef(sharp_img, blurred_img, min_kernel_size, step, max_kernel_size)
-        self.sharp = self.scale_pyramid.images[self.current_psf_size][0]
-        self.blurred = self.scale_pyramid.images[self.current_psf_size][1]
+        self.__current_psf_size = min_kernel_size
+        self.__scale_pyramid = ScalePyramidRef(sharp_img, blurred_img, min_kernel_size, step, max_kernel_size)
+        self.__sharp = self.__scale_pyramid.images[self.__current_psf_size][0]
+        self.__blurred = self.__scale_pyramid.images[self.__current_psf_size][1]
         # обновить размер популяции
         self.__update_pop_size()
         # создание особей
-        self.individuals = [Individual(self.current_psf_size, True) for i in range(0, self.size)]
+        self.__individuals = [Individual(self.__current_psf_size, True) for i in range(0, self.size)]
+
+    @property
+    def current_psf_size(self):
+        return self.__current_psf_size
+
+    @property
+    def scale_pyramid(self):
+        return self.__scale_pyramid
+
+    @property
+    def sharp(self):
+        return self.__sharp
+
+    @property
+    def blurred(self):
+        return self.__blurred
+
+    @property
+    def individuals(self):
+        return self.__individuals
+
 
     def fit(self, no_ref_metric_type, ref_metric_type, deconv_type):
         """
         Оценка приспособленностей особей популяции
         """
-        for individual in self.individuals:
-            deblurred_image = ImgDeconv.do_deconv(self.blurred, individual.psf, deconv_type)
+        for individual in self.__individuals:
+            deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
 
-            individual.score = ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type) + ImgQuality.get_ref_quality(self.sharp, deblurred_image, ref_metric_type)
-            #individual.score = frob_metric2(deblurred_image, self.blurred, individual.psf)
-            #individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.sharp, deblurred_image, self.ref_metric)
-        self.individuals.sort(key=lambda x: x.score, reverse=True)
+            individual.score = ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type) + ImgQuality.get_ref_quality(self.__sharp, deblurred_image, ref_metric_type)
+            #individual.score = frob_metric2(deblurred_image, self.__blurred, individual.psf)
+            #individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.__sharp, deblurred_image, self.ref_metric)
+        self.__individuals.sort(key=lambda x: x.score, reverse=True)
 
     def get_elite_non_elite(self, elite_count):
         """
@@ -44,7 +65,7 @@ class PopulationRef:
         :param elite_count: количество элитных особей
         :return: (элитные, не элитные)
         """
-        return copy.deepcopy(self.individuals[:elite_count]), copy.deepcopy(self.individuals[elite_count:])
+        return copy.deepcopy(self.__individuals[:elite_count]), copy.deepcopy(self.__individuals[elite_count:])
 
     def __update_pop_size(self, multiplier=10):
         """
@@ -52,23 +73,23 @@ class PopulationRef:
         :param multiplier: множитель (во сколько раз должна увеличиться популяция)
         :return:
         """
-        self.size = int(self.current_psf_size * multiplier)
+        self.size = int(self.__current_psf_size * multiplier)
         print("POPULATION SIZE UPDATED")
 
     def __expand_population(self):
         """
         Расширение популяции до указанного размера self.size
         """
-        new_kernel_size_index = self.scale_pyramid.kernel_sizes.index(self.current_psf_size) + 1
-        new_kernel_size = self.scale_pyramid.kernel_sizes[new_kernel_size_index]
-        self.current_psf_size = new_kernel_size
+        new_kernel_size_index = self.__scale_pyramid.kernel_sizes.index(self.__current_psf_size) + 1
+        new_kernel_size = self.__scale_pyramid.kernel_sizes[new_kernel_size_index]
+        self.__current_psf_size = new_kernel_size
         old_size = self.size
         self.__update_pop_size()
-        copy_diff = copy.deepcopy(self.individuals[old_size - (self.size - old_size) - 1:old_size - 1])
+        copy_diff = copy.deepcopy(self.__individuals[old_size - (self.size - old_size) - 1:old_size - 1])
         # мутация, чтобы популяция была более разнообразной
         for ind in copy_diff:
             ind.mutate_smart(probability=0.1, pos_prob=0.5)
-        self.individuals.extend(copy.deepcopy(copy_diff))
+        self.__individuals.extend(copy.deepcopy(copy_diff))
         print("POPULATION EXPANDED")
 
     def upscale(self, upscale_type):
@@ -80,30 +101,30 @@ class PopulationRef:
         # расширение популяции
         self.__expand_population()
         # получить следующее по размеру размытое изображение из пирамиды
-        self.sharp = copy.deepcopy(self.scale_pyramid.images[self.current_psf_size][0])
-        self.blurred = copy.deepcopy(self.scale_pyramid.images[self.current_psf_size][1])
+        self.__sharp = copy.deepcopy(self.__scale_pyramid.images[self.__current_psf_size][0])
+        self.__blurred = copy.deepcopy(self.__scale_pyramid.images[self.__current_psf_size][1])
         # апскейльнуть каждую особь
-        for individual in self.individuals:
+        for individual in self.__individuals:
             if upscale_type == "pad":
-                individual.upscale_pad(self.current_psf_size)
+                individual.upscale_pad(self.__current_psf_size)
             elif upscale_type == "fill":
-                individual.upscale_fill(self.current_psf_size)
+                individual.upscale_fill(self.__current_psf_size)
 
-        print(f"POPULATION UPSCALED TO SIZE: {self.current_psf_size}")
+        print(f"POPULATION UPSCALED TO SIZE: {self.__current_psf_size}")
 
     def display(self):
         count_in_row = int(self.size / 10)
         count_in_col = 10
 
-        width = count_in_row * self.current_psf_size
-        height = count_in_col * self.current_psf_size
+        width = count_in_row * self.__current_psf_size
+        height = count_in_col * self.__current_psf_size
 
         mat = np.zeros((height, width), np.float32)
 
         i = 0
         j = 0
-        for ind in self.individuals:
-            mat[i * self.current_psf_size:i * self.current_psf_size + self.current_psf_size, j * self.current_psf_size:j * self.current_psf_size + self.current_psf_size] = copy.deepcopy(ind.psf)
+        for ind in self.__individuals:
+            mat[i * self.__current_psf_size:i * self.__current_psf_size + self.__current_psf_size, j * self.__current_psf_size:j * self.__current_psf_size + self.__current_psf_size] = copy.deepcopy(ind.psf)
 
             j += 1
             if j == count_in_row:
