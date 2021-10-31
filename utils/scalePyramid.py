@@ -8,26 +8,26 @@ class ScalePyramidRef(object):
     self.images - мапа. Ключ - разрешение ядра. Значение - tuple (четкое изображение, размытое изображение)
     """
 
-    def __init__(self, sharp_img, blurred_img, min_kernel_size=3, step=2, max_kernel_size=23, inter_type=cv.INTER_AREA):
+    def __init__(self, sharp_img, blurred_img, min_psf_size=3, step=2, max_psf_size=23, inter_type=cv.INTER_AREA):
         """
         Конструктор
         :param sharp_img: четкое изображение
         :param blurred_img: размытое изображение
-        :param min_kernel_size: минимальное разрешение ядра
+        :param min_psf_size: минимальное разрешение ядра
         :param step: приращение разрешения ядра при переходе на новый уровень пирамиды
-        :param max_kernel_size: максимальный размер ядра
+        :param max_psf_size: максимальный размер ядра
         :param inter_type: вид интерполяции
         """
-        self.__get_sizes(min_kernel_size, step, max_kernel_size)
-        self.__build(sharp_img, blurred_img, max_kernel_size, inter_type)
+        self.__get_sizes(min_psf_size, step, max_psf_size)
+        self.__build(sharp_img, blurred_img, max_psf_size, inter_type)
 
     @property
-    def kernel_sizes(self):
+    def psf_sizes(self):
         """
         Получить все размеры ядер
         :return:
         """
-        return self.__kernel_sizes
+        return self.__psf_sizes
 
     @property
     def images(self):
@@ -37,17 +37,17 @@ class ScalePyramidRef(object):
         """
         return self.__images
 
-    def __build(self, sharp_img, blurred_img, min_kernel_size, inter_type):
+    def __build(self, sharp_img, blurred_img, min_psf_size, inter_type):
         """
         Построить пирамиду
         :param sharp_img: четкое изображение
         :param blurred_img: искаженное изображение
-        :param min_kernel_size: максимальный размер ядра (разрешение функции искажения)
+        :param min_psf_size: максимальный размер ядра (разрешение функции искажения)
         :param inter_type: вид интерполяции
         """
         self.__images = dict()
-        for size in self.__kernel_sizes:
-            multiplier = size / min_kernel_size
+        for size in self.__psf_sizes:
+            multiplier = size / min_psf_size
             if multiplier != 1:
                 sharp_resized = cv.resize(sharp_img, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
                 blurred_resized = cv.resize(blurred_img, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
@@ -58,18 +58,18 @@ class ScalePyramidRef(object):
             blurred_resized = ImgUtils.im2double(blurred_resized)
             self.__images[size] = (sharp_resized, blurred_resized)
 
-    def __get_sizes(self, min_kernel_size, step, max_kernel_size):
+    def __get_sizes(self, min_psf_size, step, max_psf_size):
         """
         Получить размеры ядра
-        :param min_kernel_size: минимальный размер ядра (разрешение функции искажения)
+        :param min_psf_size: минимальный размер ядра (разрешение функции искажения)
         :param step: приращение разрешения ядра при переходе на новый уровень пирамиды
-        :param max_kernel_size: максимальный размер ядра (разрешение функции искажения)
+        :param max_psf_size: максимальный размер ядра (разрешение функции искажения)
         """
-        self.__kernel_sizes = list()
-        current_kernel_size = min_kernel_size
-        while current_kernel_size <= max_kernel_size:
-            self.__kernel_sizes.append(current_kernel_size)
+        self.__psf_sizes = list()
+        current_kernel_size = min_psf_size
+        while current_kernel_size <= max_psf_size:
+            self.__psf_sizes.append(current_kernel_size)
             current_kernel_size += step
 
-        if self.__kernel_sizes[len(self.__kernel_sizes) - 1] < max_kernel_size:
-            self.__kernel_sizes.append(max_kernel_size)
+        if self.__psf_sizes[len(self.__psf_sizes) - 1] < max_psf_size:
+            self.__psf_sizes.append(max_psf_size)

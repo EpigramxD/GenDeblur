@@ -23,7 +23,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
     best_ever_kernel = np.zeros(sharp.shape)
     best_kernels = []
 
-    for i in range(0, len(population.scale_pyramid.kernel_sizes), 1):
+    for i in range(0, len(population.scale_pyramid.psf_sizes), 1):
         while True:
             if upscale_flag == STAGNATION_POPULATION_COUNT:
                 upscale_flag = 0
@@ -68,7 +68,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             upscale_flag += 1
 
         # апскейлим
-        if i != len(population.scale_pyramid.kernel_sizes) - 1:
+        if i != len(population.scale_pyramid.psf_sizes) - 1:
             # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
             # for kernel in best_kernels:
             #     xd_test += kernel
@@ -105,7 +105,7 @@ def gen_deblur_image(sharp, blurred, min_kernel_size=3, step=2, max_kernel_size=
             best_quality_in_pop = -10000.0
             population.upscale(UPSCALE_TYPE)
 
-        if i == len(population.scale_pyramid.kernel_sizes) - 1:
+        if i == len(population.scale_pyramid.psf_sizes) - 1:
             # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
             # for kernel in best_kernels:
             #     xd_test += kernel

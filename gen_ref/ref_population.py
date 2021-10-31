@@ -8,17 +8,17 @@ class PopulationRef:
     """
     Класс популяции
     """
-    def __init__(self, sharp_img, blurred_img, min_kernel_size, step, max_kernel_size):
+    def __init__(self, sharp_img, blurred_img, min_psf_size, step, max_psf_size):
         """
         Конструктор
         :param sharp_img: четкое изображение
         :param blurred_img: размытое изображение
-        :param max_kernel_size: максимальный размер ядра
+        :param max_psf_size: максимальный размер ядра
         :param deconv_type: вид инверсной фильтрации
         """
         # текущий размер ядра
-        self.__current_psf_size = min_kernel_size
-        self.__scale_pyramid = ScalePyramidRef(sharp_img, blurred_img, min_kernel_size, step, max_kernel_size)
+        self.__current_psf_size = min_psf_size
+        self.__scale_pyramid = ScalePyramidRef(sharp_img, blurred_img, min_psf_size, step, max_psf_size)
         self.__sharp = self.__scale_pyramid.images[self.__current_psf_size][0]
         self.__blurred = self.__scale_pyramid.images[self.__current_psf_size][1]
         # обновить размер популяции
@@ -80,8 +80,8 @@ class PopulationRef:
         """
         Расширение популяции до указанного размера self.size
         """
-        new_kernel_size_index = self.__scale_pyramid.kernel_sizes.index(self.__current_psf_size) + 1
-        new_kernel_size = self.__scale_pyramid.kernel_sizes[new_kernel_size_index]
+        new_kernel_size_index = self.__scale_pyramid.psf_sizes.index(self.__current_psf_size) + 1
+        new_kernel_size = self.__scale_pyramid.psf_sizes[new_kernel_size_index]
         self.__current_psf_size = new_kernel_size
         old_size = self.size
         self.__update_pop_size()
