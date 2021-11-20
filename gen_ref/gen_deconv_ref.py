@@ -9,10 +9,9 @@ DECONV_TYPE = "wiener"
 SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 2}
 CROSSOVER_ARGS = {"type" : "uniform", "probability" : 0.9}
 MUTATION_ARGS = {"type" : "smart", "probability" : 0.1, "pos_probability" : 0.5}
+PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 2, "max_psf_size" : 23}
 ELITE_COUNT = 1
-MIN_PSF_SIZE = 3
-STEP = 2
-MAX_PSF_SIZE = 23
+POPULATION_EXPAND_FACTOR = 10
 
 # четкое изображение
 sharp = cv.imread("../images/sharp/bstu2.jpg", cv.IMREAD_GRAYSCALE)
@@ -31,9 +30,8 @@ deblurrer = GenDeblurrer(STAGNATION_POPULATION_COUNT,
                          selection_args=SELECTION_ARGS,
                          crossover_args=CROSSOVER_ARGS,
                          mutation_args=MUTATION_ARGS,
-                         min_psf_size=MIN_PSF_SIZE,
-                         step=STEP,
-                         max_psf_size=MAX_PSF_SIZE,
-                         elite_count=ELITE_COUNT)
+                         pyramid_args=PYRAMID_ARGS,
+                         elite_count=ELITE_COUNT,
+                         population_expand_factor=POPULATION_EXPAND_FACTOR)
 
 deblurrer.deblur(sharp, blurred)

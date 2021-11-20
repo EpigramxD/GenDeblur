@@ -20,9 +20,8 @@ class GenDeblurrer(object):
                  selection_args,
                  crossover_args,
                  mutation_args,
-                 min_psf_size,
-                 step,
-                 max_psf_size,
+                 pyramid_args,
+                 population_expand_factor,
                  elite_count):
         self.__stagnation_pop_count = stagnation_pop_count
         # параметры селекции
@@ -35,11 +34,8 @@ class GenDeblurrer(object):
         self.__ref_metric_type = ref_metric_type
         self.__no_ref_metric_type = no_ref_metric_type
         self.__deconv_type = deconv_type
-        # параметры пирамиды
-        self.__min_psf_size = min_psf_size
-        self.__step = step
-        self.__max_psf_size = max_psf_size
-
+        self.__pyramid_args = pyramid_args
+        self.population_expand_factor = population_expand_factor
     def deblur(self, sharp_img, blurred_img):
         sharp_img_gray = ImgUtils.to_grayscale(sharp_img)
         sharp_img_gray = ImgUtils.im2double(sharp_img_gray)
@@ -47,8 +43,8 @@ class GenDeblurrer(object):
         blurred_img_gray = ImgUtils.to_grayscale(blurred_img)
         blurred_img_gray = ImgUtils.im2double(blurred_img_gray)
 
-        scale_pyramid = ScalePyramidRef(sharp_img_gray, blurred_img_gray, self.__min_psf_size, self.__step, self.__max_psf_size)
-        self.__population = PopulationRef(scale_pyramid)
+        scale_pyramid = ScalePyramidRef(sharp_img_gray, blurred_img_gray, self.__pyramid_args["min_psf_size"], self.__pyramid_args["step"], self.__pyramid_args["max_psf_size"])
+        self.__population = PopulationRef(scale_pyramid, expand_factor=self.population_expand_factor)
 
         best_quality_in_pop = -10000.0
         upscale_flag = 0
