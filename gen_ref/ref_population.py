@@ -8,17 +8,16 @@ class PopulationRef:
     """
     Класс популяции
     """
-    def __init__(self, sharp_img, blurred_img, min_psf_size, step, max_psf_size):
+    def __init__(self, scale_pyramid, expand_factor=10):
         """
         Конструктор
-        :param sharp_img: четкое изображение
-        :param blurred_img: размытое изображение
-        :param max_psf_size: максимальный размер ядра
-        :param deconv_type: вид инверсной фильтрации
+        :param scale_pyramid: scale-пирамида
+        :param expand_factor: множитель, определяющий во сколько раз увеличится количество особей в популяции
         """
         # текущий размер ядра
-        self.__current_psf_size = min_psf_size
-        self.__scale_pyramid = ScalePyramidRef(sharp_img, blurred_img, min_psf_size, step, max_psf_size)
+        self.__scale_pyramid = scale_pyramid
+        self.__expand_factor = expand_factor
+        self.__current_psf_size = scale_pyramid.psf_sizes[0]
         self.__sharp = self.__scale_pyramid.images[self.__current_psf_size][0]
         self.__blurred = self.__scale_pyramid.images[self.__current_psf_size][1]
         # обновить размер популяции
@@ -46,6 +45,10 @@ class PopulationRef:
     def individuals(self):
         return self.__individuals
 
+    @property
+    def expand_factor(self):
+        return self.expand_factor
+
 
     def fit(self, no_ref_metric_type, ref_metric_type, deconv_type):
         """
@@ -67,13 +70,12 @@ class PopulationRef:
         """
         return copy.deepcopy(self.__individuals[:elite_count]), copy.deepcopy(self.__individuals[elite_count:])
 
-    def __update_pop_size(self, multiplier=10):
+    def __update_pop_size(self):
         """
         Обновление размера популяции
-        :param multiplier: множитель (во сколько раз должна увеличиться популяция)
         :return:
         """
-        self.size = int(self.__current_psf_size * multiplier)
+        self.size = int(self.__current_psf_size * self.__expand_factor)
         print("POPULATION SIZE UPDATED")
 
     def __expand_population(self):

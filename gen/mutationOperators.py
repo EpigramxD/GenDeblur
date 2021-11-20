@@ -6,7 +6,7 @@ import random
 class MutationOperators(object):
 
     @staticmethod
-    def smartMutation(individuals, probability, pos_prob):
+    def __smart_mutation(individuals, probability, pos_prob):
         """
         Умная мутация особи
         :param individuals - мутируемые особи
@@ -40,5 +40,7 @@ class MutationOperators(object):
         return mutated_individuals
 
     @staticmethod
-    def mutate(individuals, type="smart"):
-        pass
+    def mutate(individuals, probability, type="smart", **kwargs):
+        if type == "smart":
+            # TODO: добавить проверку аргументов
+            return MutationOperators.__smart_mutation(individuals, probability, kwargs["pos_prob"])

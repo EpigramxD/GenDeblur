@@ -13,7 +13,7 @@ class SelectionOperators(object):
         return [random.choice(individuals) for i in range(k)]
 
     @staticmethod
-    def select_tournament(individuals, k, tournsize=2):
+    def __select_tournament(individuals, k, tournsize=2):
         """
         Турнирная селекция
         :param individuals: особи
@@ -26,3 +26,23 @@ class SelectionOperators(object):
             aspirants = SelectionOperators.__select_random(individuals, tournsize)
             chosen.append(copy.deepcopy(max(aspirants, key=lambda ind: ind.score)))
         return chosen
+
+    @staticmethod
+    def select(individuals, selection_args):
+        try:
+            type = selection_args["type"]
+            k = selection_args["k"]
+            if not isinstance(type, str) and not isinstance(k, int):
+                raise AttributeError("Selection type should be string")
+        except KeyError:
+            raise AttributeError("Define selection type")
+
+        # Свитчим вид селекции
+        if type == "tournament":
+            try:
+                tournsize = selection_args['tournsize']
+                if not isinstance(tournsize, int):
+                    raise AttributeError("Wrong types of arguments")
+                return SelectionOperators.__select_tournament(individuals, k, tournsize)
+            except KeyError:
+                raise AttributeError("Pass tournsize (int)")

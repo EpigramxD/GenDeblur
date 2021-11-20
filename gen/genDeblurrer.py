@@ -6,24 +6,44 @@ import numpy as np
 from gen_ref.ref_population import PopulationRef
 from utils.imgDeconv import ImgDeconv
 from utils.imgUtils import ImgUtils
+from utils.scalePyramid import ScalePyramidRef
 from .crossoverOperators import CrossoverOperators
 from .selectionOperators import SelectionOperators
 from .mutationOperators import MutationOperators
 
 
 class GenDeblurrer(object):
-    def __init__(self, stagnation_pop_count, ref_metric_type, no_ref_metric_type, deconv_type, crossover_prob, mutation_prob, pos_prob, min_psf_size, step, max_psf_size, elite_count):
+    def __init__(self, stagnation_pop_count,
+                 ref_metric_type,
+                 no_ref_metric_type,
+                 deconv_type,
+                 selection_params,
+                 crossover_type,
+                 crossover_prob,
+                 mutation_prob,
+                 mutation_type,
+                 pos_prob,
+                 min_psf_size,
+                 step,
+                 max_psf_size,
+                 elite_count):
         self.__stagnation_pop_count = stagnation_pop_count
+        # параметры селекции
+        self.__selection_params = selection_params
+        self.__elite_count = elite_count
         self.__ref_metric_type = ref_metric_type
         self.__no_ref_metric_type = no_ref_metric_type
         self.__deconv_type = deconv_type
         self.__crossover_prob = crossover_prob
+        self.__crossover_type = crossover_type
+        # параметры мутации
+        self.__mutation_type = mutation_type
         self.__mutation_prob = mutation_prob
         self.__pos_prob = pos_prob
+        # параметры пирамиды
         self.__min_psf_size = min_psf_size
         self.__step = step
         self.__max_psf_size = max_psf_size
-        self.__elite_count = elite_count
 
     def deblur(self, sharp_img, blurred_img):
         sharp_img_gray = ImgUtils.to_grayscale(sharp_img)
@@ -32,14 +52,15 @@ class GenDeblurrer(object):
         blurred_img_gray = ImgUtils.to_grayscale(blurred_img)
         blurred_img_gray = ImgUtils.im2double(blurred_img_gray)
 
+        scale_pyramid = ScalePyramidRef(sharp_img_gray, blurred_img_gray, self.__min_psf_size, self.__step, self.__max_psf_size)
+        self.__population = PopulationRef(scale_pyramid)
 
-        self.__population = PopulationRef(sharp_img_gray, blurred_img_gray, self.__min_psf_size, self.__step, self.__max_psf_size)
         best_quality_in_pop = -10000.0
         upscale_flag = 0
         best_ever_kernel = np.zeros(sharp_img_gray.shape)
         best_kernels = []
 
-        for i in range(0, len(self.__population.scale_pyramid.psf_sizes), 1):
+        for i in range(0, len(scale_pyramid.psf_sizes), 1):
             while True:
                 if upscale_flag == self.__stagnation_pop_count:
                     upscale_flag = 0
@@ -57,18 +78,12 @@ class GenDeblurrer(object):
 
                 # селекция и скрещивание
                 elite_individuals, non_elite_individuals = self.__population.get_elite_non_elite(self.__elite_count)
-                selected_individuals = SelectionOperators.select_tournament(non_elite_individuals, k=len(non_elite_individuals))
-                crossed_individuals = CrossoverOperators.uniform_crossover(selected_individuals, probability=self.__crossover_prob)
+                self.__selection_params["k"] = len(non_elite_individuals)
+                selected_individuals = SelectionOperators.select(non_elite_individuals, self.__selection_params)
+                crossed_individuals = CrossoverOperators.crossover(selected_individuals, probability=self.__crossover_prob, type=self.__crossover_type)
 
                 # мутация
-                #mutated_individuals = copy.deepcopy(crossed_individuals[:])
-                if True:
-                    # for ind in mutated_individuals:
-                    #     ind.mutate_smart(self.__mutation_prob, self.__pos_prob)
-                    mutated_individuals = MutationOperators.smartMutation(crossed_individuals, self.__mutation_prob, self.__pos_prob)
-                else:
-                    for ind in mutated_individuals:
-                        ind.mutate(self.__mutation_prob, self.__pos_prob)
+                mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_prob, pos_prob=self.__pos_prob)
 
                 # обновление особей популяции
                 self.__population.individuals.clear()
@@ -77,7 +92,7 @@ class GenDeblurrer(object):
                 upscale_flag += 1
 
             # апскейлим
-            if i != len(self.__population.scale_pyramid.psf_sizes) - 1:
+            if i != len(scale_pyramid.psf_sizes) - 1:
                 # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
                 # for kernel in best_kernels:
                 #     xd_test += kernel
@@ -109,7 +124,7 @@ class GenDeblurrer(object):
                 best_quality_in_pop = -10000.0
                 self.__population.upscale("pad")
 
-            if i == len(self.__population.scale_pyramid.psf_sizes) - 1:
+            if i == len(scale_pyramid.psf_sizes) - 1:
                 # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
                 # for kernel in best_kernels:
                 #     xd_test += kernel

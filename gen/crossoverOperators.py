@@ -3,7 +3,7 @@ import numpy as np
 
 class CrossoverOperators(object):
     @staticmethod
-    def uniform_crossover(selected_individuals, probability):
+    def __uniform_crossover(selected_individuals, probability):
         """
         Равномерное скрещивание особей
         :param selected_individuals: отобранные на этапе селекции особи
@@ -27,3 +27,8 @@ class CrossoverOperators(object):
                 parent2.psf = np.reshape(psf2, (psf_size, psf_size))
 
             return selected
+
+    @staticmethod
+    def crossover(selected_individuals, probability, type):
+        if type == "uniform":
+            return CrossoverOperators.__uniform_crossover(selected_individuals, probability)
