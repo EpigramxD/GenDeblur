@@ -1,12 +1,15 @@
-import cv2 as cv
-import numpy as np
 import copy
 
-import utils.imgDeconv
+import cv2 as cv
+import numpy as np
+
 from gen_ref.ref_population import PopulationRef
 from utils.imgDeconv import ImgDeconv
-from .selectionOperators import SelectionOperators
+from utils.imgUtils import ImgUtils
 from .crossoverOperators import CrossoverOperators
+from .selectionOperators import SelectionOperators
+from .mutationOperators import MutationOperators
+
 
 class GenDeblurrer(object):
     def __init__(self, stagnation_pop_count, ref_metric_type, no_ref_metric_type, deconv_type, crossover_prob, mutation_prob, pos_prob, min_psf_size, step, max_psf_size, elite_count):
@@ -23,10 +26,17 @@ class GenDeblurrer(object):
         self.__elite_count = elite_count
 
     def deblur(self, sharp_img, blurred_img):
-        self.__population = PopulationRef(sharp_img, blurred_img, self.__min_psf_size, self.__step, self.__max_psf_size)
+        sharp_img_gray = ImgUtils.to_grayscale(sharp_img)
+        sharp_img_gray = ImgUtils.im2double(sharp_img_gray)
+
+        blurred_img_gray = ImgUtils.to_grayscale(blurred_img)
+        blurred_img_gray = ImgUtils.im2double(blurred_img_gray)
+
+
+        self.__population = PopulationRef(sharp_img_gray, blurred_img_gray, self.__min_psf_size, self.__step, self.__max_psf_size)
         best_quality_in_pop = -10000.0
         upscale_flag = 0
-        best_ever_kernel = np.zeros(sharp_img.shape)
+        best_ever_kernel = np.zeros(sharp_img_gray.shape)
         best_kernels = []
 
         for i in range(0, len(self.__population.scale_pyramid.psf_sizes), 1):
@@ -51,10 +61,11 @@ class GenDeblurrer(object):
                 crossed_individuals = CrossoverOperators.uniform_crossover(selected_individuals, probability=self.__crossover_prob)
 
                 # мутация
-                mutated_individuals = copy.deepcopy(crossed_individuals[:])
+                #mutated_individuals = copy.deepcopy(crossed_individuals[:])
                 if True:
-                    for ind in mutated_individuals:
-                        ind.mutate_smart(self.__mutation_prob, self.__pos_prob)
+                    # for ind in mutated_individuals:
+                    #     ind.mutate_smart(self.__mutation_prob, self.__pos_prob)
+                    mutated_individuals = MutationOperators.smartMutation(crossed_individuals, self.__mutation_prob, self.__pos_prob)
                 else:
                     for ind in mutated_individuals:
                         ind.mutate(self.__mutation_prob, self.__pos_prob)

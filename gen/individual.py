@@ -119,7 +119,7 @@ class Individual:
         else:
             return random.choice([col + 1, col + 2, col + 3, col - 1, col - 2, col - 3])
 
-    def __get_random_neighbor_position(self, row, col):
+    def get_random_neighbor_position(self, row, col):
         return self.__get_random_vertical_neighbor(row), self.__get_random_horizontal_neighbor(col)
 
     def mutate_smart(self, probability, pos_prob):
@@ -132,7 +132,7 @@ class Individual:
 
         for position in bright_pixels:
             if random.random() < probability:
-                random_neighbor_position = self.__get_random_neighbor_position(position[0], position[1])
+                random_neighbor_position = self.get_random_neighbor_position(position[0], position[1])
 
                 if random.random() < pos_prob:
                     try:

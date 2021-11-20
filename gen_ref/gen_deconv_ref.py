@@ -17,8 +17,6 @@ MAX_KERNEL_SIZE = 23
 # четкое изображение
 sharp = cv.imread("../images/sharp/bstu2.jpg", cv.IMREAD_GRAYSCALE)
 #sharp = sharp ** (1/2.2)
-sharp = np.float32(sharp)
-cv.normalize(sharp, sharp, 0.0, 1.0, cv.NORM_MINMAX)
 
 psf = cv.imread("../images/psfs/2.png", cv.IMREAD_GRAYSCALE)
 psf = ImgUtils.pad_to_shape(psf, sharp.shape)
