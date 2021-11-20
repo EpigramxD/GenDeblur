@@ -17,29 +17,24 @@ class GenDeblurrer(object):
                  ref_metric_type,
                  no_ref_metric_type,
                  deconv_type,
-                 selection_params,
-                 crossover_type,
-                 crossover_prob,
-                 mutation_prob,
-                 mutation_type,
-                 pos_prob,
+                 selection_args,
+                 crossover_args,
+                 mutation_args,
                  min_psf_size,
                  step,
                  max_psf_size,
                  elite_count):
         self.__stagnation_pop_count = stagnation_pop_count
         # параметры селекции
-        self.__selection_params = selection_params
+        self.__selection_args = selection_args,
+        # параметры скрещивания
+        self.__crossover_args = crossover_args,
+        # парамеры мутации
+        self.__mutation_args = mutation_args,
         self.__elite_count = elite_count
         self.__ref_metric_type = ref_metric_type
         self.__no_ref_metric_type = no_ref_metric_type
         self.__deconv_type = deconv_type
-        self.__crossover_prob = crossover_prob
-        self.__crossover_type = crossover_type
-        # параметры мутации
-        self.__mutation_type = mutation_type
-        self.__mutation_prob = mutation_prob
-        self.__pos_prob = pos_prob
         # параметры пирамиды
         self.__min_psf_size = min_psf_size
         self.__step = step
@@ -76,14 +71,14 @@ class GenDeblurrer(object):
                     best_kernels.append(copy.deepcopy(self.__population.individuals[0].psf))
                     upscale_flag = 0
 
-                # селекция и скрещивание
+                # селекция
                 elite_individuals, non_elite_individuals = self.__population.get_elite_non_elite(self.__elite_count)
-                self.__selection_params["k"] = len(non_elite_individuals)
-                selected_individuals = SelectionOperators.select(non_elite_individuals, self.__selection_params)
-                crossed_individuals = CrossoverOperators.crossover(selected_individuals, probability=self.__crossover_prob, type=self.__crossover_type)
-
+                self.__selection_args[0]["k"] = len(non_elite_individuals)
+                selected_individuals = SelectionOperators.select(non_elite_individuals, self.__selection_args[0])
+                # скрещивание
+                crossed_individuals = CrossoverOperators.crossover(selected_individuals, self.__crossover_args[0])
                 # мутация
-                mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_prob, pos_prob=self.__pos_prob)
+                mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_args[0])
 
                 # обновление особей популяции
                 self.__population.individuals.clear()

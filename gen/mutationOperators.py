@@ -6,7 +6,7 @@ import random
 class MutationOperators(object):
 
     @staticmethod
-    def __smart_mutation(individuals, probability, pos_prob):
+    def __smart_mutation(individuals, probability, pos_probability):
         """
         Умная мутация особи
         :param individuals - мутируемые особи
@@ -20,7 +20,7 @@ class MutationOperators(object):
                 if random.random() < probability:
                     random_neighbor_position = individual.get_random_neighbor_position(position[0], position[1])
 
-                    if random.random() < pos_prob:
+                    if random.random() < pos_probability:
                         try:
                             individual.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.1,
                                                                                                                    1.0)
@@ -40,7 +40,20 @@ class MutationOperators(object):
         return mutated_individuals
 
     @staticmethod
-    def mutate(individuals, probability, type="smart", **kwargs):
+    def mutate(individuals, mutation_args):
+        try:
+            type = mutation_args["type"]
+            probability = mutation_args["probability"]
+            if not isinstance(type, str) and not isinstance(probability, float):
+                raise AttributeError("Mutation type should be string and prob should be float")
+        except KeyError:
+            raise AttributeError("Define mutation type and probability")
+
         if type == "smart":
-            # TODO: добавить проверку аргументов
-            return MutationOperators.__smart_mutation(individuals, probability, kwargs["pos_prob"])
+            try:
+                pos_probability = mutation_args["pos_probability"]
+                if not isinstance(pos_probability, float):
+                    raise AttributeError("pos_probability type should be string and prob should be float")
+            except KeyError:
+                raise AttributeError("Define pos_probability for smart_mutation")
+            return MutationOperators.__smart_mutation(individuals, probability, pos_probability=pos_probability)

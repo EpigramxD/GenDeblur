@@ -29,6 +29,14 @@ class CrossoverOperators(object):
             return selected
 
     @staticmethod
-    def crossover(selected_individuals, probability, type):
+    def crossover(selected_individuals, crossover_args):
+        try:
+            type = crossover_args["type"]
+            probability = crossover_args["probability"]
+            if not isinstance(type, str) and not isinstance(probability, float):
+                raise AttributeError("Crossover type should be string and prob should be float")
+        except KeyError:
+            raise AttributeError("Define crossover type and probability")
+
         if type == "uniform":
             return CrossoverOperators.__uniform_crossover(selected_individuals, probability)
