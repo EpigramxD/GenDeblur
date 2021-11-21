@@ -44,7 +44,11 @@ class GenDeblurrer(object):
         blurred_img_gray = ImgUtils.to_grayscale(blurred_img)
         blurred_img_gray = ImgUtils.im2double(blurred_img_gray)
 
-        scale_pyramid = ScalePyramidRef(sharp_img_gray, blurred_img_gray, self.__pyramid_args["min_psf_size"], self.__pyramid_args["step"], self.__pyramid_args["max_psf_size"])
+        scale_pyramid = ScalePyramidRef(sharp_img_gray, blurred_img_gray,
+                                        self.__pyramid_args["min_psf_size"],
+                                        self.__pyramid_args["step"],
+                                        self.__pyramid_args["max_psf_size"],
+                                        self.__pyramid_args["inter_type"])
         self.__population = PopulationRef(scale_pyramid, expand_factor=self.__population_expand_factor)
 
         best_quality_in_pop = -10000.0

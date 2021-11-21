@@ -9,7 +9,7 @@ DECONV_TYPE = "wiener"
 SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 2}
 CROSSOVER_ARGS = {"type" : "uniform", "probability" : 0.9}
 MUTATION_ARGS = {"type" : "smart", "probability" : 0.1, "pos_probability" : 0.5}
-PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 2, "max_psf_size" : 23}
+PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 2, "max_psf_size" : 23, "inter_type": cv.INTER_AREA}
 ELITE_COUNT = 1
 POPULATION_EXPAND_FACTOR = 10
 
