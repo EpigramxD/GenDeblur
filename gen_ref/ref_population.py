@@ -1,8 +1,9 @@
+import copy
+import cv2 as cv
+import numpy as np
 from gen.individual import Individual
 from utils.imgDeconv import ImgDeconv
 from utils.imgQuality import ImgQuality
-from utils.scalePyramid import ScalePyramidRef
-from utils.size_utils import *
 
 class PopulationRef:
     """
@@ -23,7 +24,7 @@ class PopulationRef:
         # обновить размер популяции
         self.__update_pop_size()
         # создание особей
-        self.__individuals = [Individual(self.__current_psf_size, True) for i in range(0, self.size)]
+        self.__individuals = [Individual(self.__current_psf_size, True) for i in range(0, self.__size)]
 
     @property
     def current_psf_size(self):
@@ -48,6 +49,10 @@ class PopulationRef:
     @property
     def expand_factor(self):
         return self.expand_factor
+
+    @property
+    def size(self):
+        return self.__size
 
 
     def fit(self, no_ref_metric_type, ref_metric_type, deconv_type):
@@ -75,19 +80,19 @@ class PopulationRef:
         Обновление размера популяции
         :return:
         """
-        self.size = int(self.__current_psf_size * self.__expand_factor)
+        self.__size = int(self.__current_psf_size * self.__expand_factor)
         print("POPULATION SIZE UPDATED")
 
     def __expand_population(self):
         """
-        Расширение популяции до указанного размера self.size
+        Расширение популяции до указанного размера self.__size
         """
         new_kernel_size_index = self.__scale_pyramid.psf_sizes.index(self.__current_psf_size) + 1
         new_kernel_size = self.__scale_pyramid.psf_sizes[new_kernel_size_index]
         self.__current_psf_size = new_kernel_size
-        old_size = self.size
+        old_size = self.__size
         self.__update_pop_size()
-        copy_diff = copy.deepcopy(self.__individuals[old_size - (self.size - old_size) - 1:old_size - 1])
+        copy_diff = copy.deepcopy(self.__individuals[old_size - (self.__size - old_size) - 1:old_size - 1])
         # мутация, чтобы популяция была более разнообразной
         for ind in copy_diff:
             ind.mutate_smart(probability=0.1, pos_prob=0.5)
@@ -115,7 +120,7 @@ class PopulationRef:
         print(f"POPULATION UPSCALED TO SIZE: {self.__current_psf_size}")
 
     def display(self):
-        count_in_row = int(self.size / 10)
+        count_in_row = int(self.__size / 10)
         count_in_col = 10
 
         width = count_in_row * self.__current_psf_size

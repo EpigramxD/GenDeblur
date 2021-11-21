@@ -18,9 +18,9 @@ class Individual:
         if len(args) == 1:
             if isinstance(args[0], np.ndarray):
                 self.__psf = args[0].copy()
-                if self.__psf.shape[0] != self.psf.shape[1]:
+                if self.__psf.shape[0] != self.__psf.shape[1]:
                     raise AttributeError("Ядро смаза должно иметь одинаковую высоту и ширину".format(type(args[0])))
-                self.__psf_size = self.psf.shape[0]
+                self.__psf_size = self.__psf.shape[0]
                 self.__score = 0.0
             else:
                 raise AttributeError("Получен аргумент типа {}, а должен быть ndarray".format(type(args[0])))
@@ -155,7 +155,7 @@ class Individual:
         Увеличение размера ядра путем растягивания (масштабирования)
         :param new_psf_size: новый размер ядра
         """
-        multiplier = new_psf_size / self.psf_size
+        multiplier = new_psf_size / self.__psf_size
         self.__psf_size = new_psf_size
         self.__psf = copy.deepcopy(cv.resize(self.__psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_AREA))
         self.normalize()
@@ -169,7 +169,7 @@ class Individual:
         difference = new_psf_size - self.__psf.shape[0]
         start_pos = int(difference / 2)
         result[start_pos:start_pos + self.__psf.shape[0], start_pos:start_pos + self.__psf_size] = copy.deepcopy(self.__psf)
-        self.psf = copy.deepcopy(result)
+        self.__psf = copy.deepcopy(result)
         self.__psf_size = new_psf_size
         self.normalize()
         return result
