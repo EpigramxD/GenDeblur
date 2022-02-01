@@ -246,7 +246,10 @@ class ImgUtils(object):
         :return: Total variation gradient
         """
         result = np.zeros(img.shape, np.double)
-        for c in range(0, img.shape[2], 1):
-            channel = copy.copy(img[:, :, c])
-            result[:, :, c] = ImgUtils.__grad_tv_1c(channel, epsilon)
+        if len(img.shape) == 2:
+            return ImgUtils.__grad_tv_1c(img, epsilon)
+        else:
+            for c in range(0, img.shape[2], 1):
+                channel = copy.copy(img[:, :, c])
+                result[:, :, c] = ImgUtils.__grad_tv_1c(channel, epsilon)
         return result

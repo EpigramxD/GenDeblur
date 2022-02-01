@@ -62,7 +62,8 @@ class PopulationRef:
         for individual in self.__individuals:
             deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
 
-            individual.score = ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type) + ImgQuality.get_ref_quality(self.__sharp, deblurred_image, ref_metric_type)
+            #individual.score = ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type) + ImgQuality.get_ref_quality(self.__sharp, deblurred_image, ref_metric_type)
+            individual.score = ImgQuality.frob_metric2(deblurred_image, self.__blurred, individual.psf) + 10000 * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
             #individual.score = frob_metric2(deblurred_image, self.__blurred, individual.psf)
             #individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.__sharp, deblurred_image, self.ref_metric)
         self.__individuals.sort(key=lambda x: x.score, reverse=True)

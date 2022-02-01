@@ -151,4 +151,4 @@ class GenDeblurrer(object):
                 cv.imwrite(blurred_file_name, blurred_normalized)
                 # ЗАПИСЬ
 
-        return ImgDeconv.do_deconv(self.__population.blurred, self.__population.individuals[0].psf, type=self.__deconv_type)
+        return ImgDeconv.do_deconv(self.__population.blurred, self.__population.individuals[0].psf, self.__deconv_type, K=1.0)

@@ -329,14 +329,18 @@ class ImgQuality(object):
         """
         psf_fft = np.fft.fft2(ImgUtils.im2double(ImgUtils.pad_to_shape(psf, sharp_img.shape)))
         sharp_image_fft = np.fft.fft2(ImgUtils.im2double(sharp_img))
-        fft_mul = np.abs(np.fft.ifft2(sharp_image_fft * psf_fft))
+        fft_mul = np.fft.ifft2(sharp_image_fft * psf_fft).real
+        fft_mul = np.fft.fftshift(fft_mul)
+        result = np.zeros(fft_mul.shape)
+        cv.normalize(fft_mul, result, 0.0, 1.0, cv.NORM_MINMAX)
+        result = np.float32(result)
         fft_mul -= ImgUtils.grad_tv(blurred_img)
-        fft_mul = np.linalg.norm(fft_mul, 'fro')
+        fft_mul = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
         # x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
         # y = cv.Laplacian(sharp_img, cv.CV_32F)
         # y = lamb * np.linalg.norm(y, 'fro')
         # z = gam * np.linalg.norm(psf, 'fro')
-        return -1 * fft_mul
+        return -1 * lamb * fft_mul
 
     @staticmethod
     def get_ref_quality(img1, img2, type):
