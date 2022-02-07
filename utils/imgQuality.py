@@ -334,13 +334,15 @@ class ImgQuality(object):
         result = np.zeros(fft_mul.shape)
         cv.normalize(fft_mul, result, 0.0, 1.0, cv.NORM_MINMAX)
         result = np.float32(result)
-        fft_mul -= ImgUtils.grad_tv(blurred_img)
-        fft_mul = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
+        result -= blurred_img
+        result = np.linalg.norm(result, 'fro') * np.linalg.norm(result, 'fro')
+        result = lamb * result
+        result += 0.0003 * np.sum(ImgUtils.grad_tv(sharp_img))
         # x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
         # y = cv.Laplacian(sharp_img, cv.CV_32F)
         # y = lamb * np.linalg.norm(y, 'fro')
         # z = gam * np.linalg.norm(psf, 'fro')
-        return -1 * lamb * fft_mul
+        return -1 * result
 
     @staticmethod
     def get_ref_quality(img1, img2, type):

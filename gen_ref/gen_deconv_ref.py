@@ -3,7 +3,7 @@ from gen.genDeblurrer import GenDeblurrer
 # константы
 STAGNATION_POPULATION_COUNT = 50
 UPSCALE_TYPE = "pad"
-NO_REF_METRIC = "dark"
+NO_REF_METRIC = "fourier"
 REF_METRIC = "ssim"
 DECONV_TYPE = "wiener"
 SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 2}
