@@ -289,7 +289,7 @@ class ImgQuality(object):
 
     # TODO: ваще не уверен
     @staticmethod
-    def __frob_metric_simple(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
+    def frob_metric_simple(sharp_img, blurred_img, psf, lamb=0.001, gam=0.001):
         """
         quality = x + y + z
         x = (frob_norm(sharp_image * psf - blurred_image))^2
@@ -302,11 +302,16 @@ class ImgQuality(object):
         :param gam: const2
         :return:
         """
-        psf_fft = np.fft.fft2(ImgUtils.pad_to_shape(psf, sharp_img.shape))
-        sharp_image_fft = np.fft.fft2(sharp_img.copy())
+        psf_fft = np.fft.fft2(ImgUtils.im2double(ImgUtils.pad_to_shape(psf, sharp_img.shape)))
+        sharp_image_fft = np.fft.fft2(ImgUtils.im2double(sharp_img))
         fft_mul = np.fft.ifft2(sharp_image_fft * psf_fft).real
-        fft_mul -= blurred_img
-        x = np.linalg.norm(fft_mul, 'fro') * np.linalg.norm(fft_mul, 'fro')
+        fft_mul = np.fft.fftshift(fft_mul)
+        result = np.zeros(fft_mul.shape)
+        cv.normalize(fft_mul, result, 0.0, 1.0, cv.NORM_MINMAX)
+        result = np.float32(result)
+        result -= blurred_img
+
+        x = np.linalg.norm(result, 'fro') * np.linalg.norm(result, 'fro')
         y = cv.Laplacian(sharp_img, cv.CV_32F)
         y = lamb * np.linalg.norm(y, 'fro')
         z = gam * np.linalg.norm(psf, 'fro')
@@ -335,6 +340,7 @@ class ImgQuality(object):
         cv.normalize(fft_mul, result, 0.0, 1.0, cv.NORM_MINMAX)
         result = np.float32(result)
         result -= blurred_img
+        #result = np.sum(np.absolute(result)) * np.sum(np.absolute(result))
         result = np.linalg.norm(result, 'fro') * np.linalg.norm(result, 'fro')
         result = lamb * result
         result += 0.0003 * np.sum(ImgUtils.grad_tv(sharp_img))
@@ -343,6 +349,16 @@ class ImgQuality(object):
         # y = lamb * np.linalg.norm(y, 'fro')
         # z = gam * np.linalg.norm(psf, 'fro')
         return -1 * result
+
+    @staticmethod
+    def test_map_metric(sharp_img, blurred_img):
+        lamb = 0.0003
+        p = 100000000.0
+        dif = sharp_img - blurred_img
+        x = 0.5 * np.linalg.norm(dif, ord=2) * np.linalg.norm(dif, ord=2)
+        y = (lamb/2.0) * np.power(np.sum(np.power(np.absolute(sharp_img), p)), 1.0/p)
+        return -1 * (x + y)
+
 
     @staticmethod
     def get_ref_quality(img1, img2, type):
