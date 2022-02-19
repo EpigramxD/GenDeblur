@@ -51,7 +51,7 @@ class GenDeblurrer(object):
                                         self.__pyramid_args["inter_type"])
         self.__population = PopulationRef(scale_pyramid, expand_factor=self.__population_expand_factor)
 
-        best_quality_in_pop = -10000.0
+        best_quality_in_pop = -10000000000.0
         upscale_flag = 0
         best_ever_kernel = np.zeros(sharp_img_gray.shape)
         best_kernels = []
@@ -117,7 +117,7 @@ class GenDeblurrer(object):
                 cv.imwrite(kernel_file_name, best_kernel_for_size)
                 cv.imwrite(blurred_file_name, blurred_normalized)
 
-                best_quality_in_pop = -10000.0
+                best_quality_in_pop = -10000000000.0
                 self.__population.upscale("pad")
 
             if i == len(scale_pyramid.psf_sizes) - 1:

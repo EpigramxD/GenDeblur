@@ -16,7 +16,7 @@ DECONV_TYPE = "weiner"
 
 def gen_deblur_image(image, kernel_size=23, metric_type="fourier", elite_count=0):
     population = Population(image, kernel_size, metric_type)
-    best_quality_in_pop = -10000.0
+    best_quality_in_pop = -10000000000.0
     upscale_flag = 0
 
     for i in range(0, len(population.kernel_sizes), 1):
