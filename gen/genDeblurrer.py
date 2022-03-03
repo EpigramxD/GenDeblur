@@ -22,7 +22,9 @@ class GenDeblurrer(object):
                  mutation_args,
                  pyramid_args,
                  population_expand_factor,
-                 elite_count):
+                 elite_count,
+                 upscale_type):
+
         self.__stagnation_pop_count = stagnation_pop_count
         # параметры селекции
         self.__selection_args = selection_args,
@@ -36,6 +38,7 @@ class GenDeblurrer(object):
         self.__deconv_type = deconv_type
         self.__pyramid_args = pyramid_args
         self.__population_expand_factor = population_expand_factor
+        self.__upscale_type = upscale_type
 
     def deblur(self, sharp_img, blurred_img):
         sharp_img_gray = ImgUtils.to_grayscale(sharp_img)
@@ -80,6 +83,8 @@ class GenDeblurrer(object):
                 crossed_individuals = CrossoverOperators.crossover(selected_individuals, self.__crossover_args[0])
                 # мутация
                 mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_args[0])
+                # TODO: рассмотреть вариант с динамической положительной вероятностью мутации
+                # self.__mutation_args[0]["pos_probability"] = 2.7 * 1 / scale_pyramid.psf_sizes[i]
 
                 # обновление особей популяции
                 self.__population.individuals.clear()
@@ -118,7 +123,7 @@ class GenDeblurrer(object):
                 cv.imwrite(blurred_file_name, blurred_normalized)
 
                 best_quality_in_pop = -10000000000.0
-                self.__population.upscale("pad")
+                self.__population.upscale(self.__upscale_type)
 
             if i == len(scale_pyramid.psf_sizes) - 1:
                 # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)

@@ -68,6 +68,19 @@ class PopulationRef:
             #individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.__sharp, deblurred_image, self.ref_metric)
         self.__individuals.sort(key=lambda x: x.score, reverse=True)
 
+
+        # TODO: рассмотреть варинат с оценкой по отдельности
+        # for individual in self.__individuals:
+        #     deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
+        #     individual.score = ImgQuality.test_map_metric(deblurred_image, self.__blurred)
+        # self.__individuals.sort(key=lambda x: x.score, reverse=True)
+        #
+        # for i in range(0, len(self.__individuals), 1):
+        #     individual = self.__individuals[i]
+        #     deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
+        #     individual.score = (5000 * (1 + 1 / (1 + i))) * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
+
+
     def get_elite_non_elite(self, elite_count):
         """
         Получить элитных и не элитных особей
@@ -81,7 +94,7 @@ class PopulationRef:
         Обновление размера популяции
         :return:
         """
-        self.__size = int(self.__current_psf_size * self.__expand_factor)
+        self.__size = int(self.__current_psf_size + self.__expand_factor)
         print("POPULATION SIZE UPDATED")
 
     def __expand_population(self):

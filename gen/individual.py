@@ -157,7 +157,7 @@ class Individual:
         """
         multiplier = new_psf_size / self.__psf_size
         self.__psf_size = new_psf_size
-        self.__psf = copy.deepcopy(cv.resize(self.__psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_AREA))
+        self.__psf = copy.deepcopy(cv.resize(self.__psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_LINEAR))
         self.normalize()
 
     def upscale_pad(self, new_psf_size):
