@@ -34,9 +34,7 @@ class Individual:
                 self.__score = 0.0
                 self.__psf = np.zeros((kernel_size, kernel_size))
                 if is_line:
-                    self.__psf[1][0] = 1.0
-                    self.__psf[1][1] = 1.0
-                    self.__psf[1][2] = 1.0
+                    self.__psf[int(kernel_size / 2) + 1][:] = 1.0
             else:
                 raise AttributeError("Получены аргументы типа {} и {}, а должны быть int и bool".format(type(args[0]), type(args[1])))
 
