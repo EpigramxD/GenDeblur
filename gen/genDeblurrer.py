@@ -21,7 +21,7 @@ def fit_range(blurred, deconv_type, no_ref_metric_type, population_range, empty_
         deblurred_image = ImgDeconv.do_deconv(blurred, individual.psf, deconv_type)
         # individual.score = ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type) + ImgQuality.get_ref_quality(self.__sharp, deblurred_image, ref_metric_type)
         # individual.score = ImgQuality.frob_metric_simple(deblurred_image, self.__blurred, individual.psf) + 100000 * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
-        individual.score = ImgQuality.test_map_metric(deblurred_image, blurred) + 5000 * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
+        individual.score = ImgQuality.test_map_metric(deblurred_image, blurred) + 15000 * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
         #individual.score = ImgQuality.frob_metric2(deblurred_image, blurred, individual.psf) + ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
         # individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.__sharp, deblurred_image, self.ref_metric)
         empty_list.append(copy.deepcopy(individual))
@@ -127,6 +127,7 @@ class GenDeblurrer(object):
                 # скрещивание
                 crossed_individuals = CrossoverOperators.crossover(selected_individuals, self.__crossover_args[0])
                 # мутация
+                self.__mutation_args[0]["pos_probability"] = self.__population.current_psf_size / 30
                 mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_args[0])
                 # TODO: рассмотреть вариант с динамической положительной вероятностью мутации
                 # self.__mutation_args[0]["pos_probability"] = 2.7 * 1 / scale_pyramid.psf_sizes[i]
