@@ -26,6 +26,31 @@ def fit_range(blurred, deconv_type, no_ref_metric_type, population_range, empty_
         # individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.__sharp, deblurred_image, self.ref_metric)
         empty_list.append(copy.deepcopy(individual))
 
+# TODO: ОТРЕФАКТОРИТЬ
+def mp_fit(blurred, mp_manager, deconv_type, no_ref_metric_type, all_population_individuals, process_count):
+    population_size = len(all_population_individuals)
+    population_step = int((population_size - (population_size % process_count)) / process_count)
+    fitted_population_mp = mp_manager.list()
+
+    processes = list()
+
+    for i in range(0, process_count, 1):
+        if i != process_count - 1:
+            processes.append(mp.Process(target=fit_range, args=(copy.deepcopy(blurred), deconv_type, no_ref_metric_type, all_population_individuals[i * population_step: (i + 1) * population_step], fitted_population_mp)))
+        else:
+            processes.append(mp.Process(target=fit_range, args=(copy.deepcopy(blurred), deconv_type, no_ref_metric_type, all_population_individuals[i * population_step: population_size], fitted_population_mp)))
+
+    for process in processes:
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    fitted_population = copy.deepcopy(fitted_population_mp)
+    fitted_population.sort(key=lambda x: x.score, reverse=True)
+
+    return fitted_population
+
 
 class GenDeblurrer(object):
     def __init__(self, stagnation_pop_count,
@@ -77,38 +102,43 @@ class GenDeblurrer(object):
         best_kernels = []
 
         for i in range(0, len(scale_pyramid.psf_sizes), 1):
+            # считаем, что выгоднее использовать по времени
+            cpu_count = mp.cpu_count()
+
+            start = time.time()
+            self.__population.fit(self.__no_ref_metric_type, self.__ref_metric_type, self.__deconv_type)
+            end = time.time()
+            single_process_time = end - start
+
+            start = time.time()
+            mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
+                   self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 4))
+            end = time.time()
+            mp_quad_time = end - start
+
+            if single_process_time < mp_quad_time:
+                cpu_count = 1
+            else:
+                start = time.time()
+                mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
+                       self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 2))
+                end = time.time()
+                mp_half_time = end - start
+                if mp_quad_time < mp_half_time:
+                    cpu_count = int(cpu_count / 4)
+                else:
+                    cpu_count = int(cpu_count / 2)
+
             while True:
                 if upscale_flag == self.__stagnation_pop_count:
                     upscale_flag = 0
                     break
                 start = time.time()
 
-                if self.__population.current_psf_size < 13:
+                if cpu_count == 1:
                     self.__population.fit(self.__no_ref_metric_type, self.__ref_metric_type, self.__deconv_type)
                 else:
-                    # TODO: отрефакторить
-                    # параллельная оценка приспособленности популяции по частям
-                    population_size = len(self.__population.individuals)
-                    population_step = int((population_size - (population_size % 4)) / 4)
-                    fitted_population_mp = self.__multiprocessing_manager.list()
-
-                    p1 = mp.Process(target=fit_range, args=(copy.deepcopy(self.__population.blurred), self.__deconv_type, self.__no_ref_metric_type, self.__population.individuals[0: population_step], fitted_population_mp))
-                    p2 = mp.Process(target=fit_range, args=(copy.deepcopy(self.__population.blurred), self.__deconv_type, self.__no_ref_metric_type, self.__population.individuals[population_step: population_step * 2], fitted_population_mp))
-                    p3 = mp.Process(target=fit_range, args=(copy.deepcopy(self.__population.blurred), self.__deconv_type, self.__no_ref_metric_type, self.__population.individuals[population_step * 2: population_step * 3], fitted_population_mp))
-                    p4 = mp.Process(target=fit_range, args=(copy.deepcopy(self.__population.blurred), self.__deconv_type, self.__no_ref_metric_type, self.__population.individuals[population_step * 3: population_size], fitted_population_mp))
-
-                    p1.start()
-                    p2.start()
-                    p3.start()
-                    p4.start()
-
-                    p1.join()
-                    p2.join()
-                    p3.join()
-                    p4.join()
-                    fitted_population = copy.deepcopy(fitted_population_mp)
-                    fitted_population.sort(key=lambda x: x.score, reverse=True)
-                    self.__population.individuals = copy.deepcopy(fitted_population)
+                    self.__population.individuals = copy.deepcopy(mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__no_ref_metric_type, self.__population.individuals, cpu_count))
 
                 end = time.time()
                 print(f"ELAPSED TIME: {end-start}")
@@ -127,6 +157,7 @@ class GenDeblurrer(object):
                 # скрещивание
                 crossed_individuals = CrossoverOperators.crossover(selected_individuals, self.__crossover_args[0])
                 # мутация
+                # с ростом разрешения ядра вероятность увеличения белых пикселей растет
                 self.__mutation_args[0]["pos_probability"] = self.__population.current_psf_size / 30
                 mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_args[0])
                 # TODO: рассмотреть вариант с динамической положительной вероятностью мутации
