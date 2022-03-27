@@ -1,17 +1,17 @@
 import cv2 as cv
 from .imgUtils import ImgUtils
 
-class ScalePyramidRef(object):
+
+class ScalePyramid(object):
     """
     Класс пирамиды четких и размытых изображений разного разрешения
     self.sizes - список размеров ядра (разрешения функции искажения)
     self.images - мапа. Ключ - разрешение ядра. Значение - tuple (четкое изображение, размытое изображение)
     """
 
-    def __init__(self, sharp_img, blurred_img, min_psf_size=3, step=2, max_psf_size=23, inter_type=cv.INTER_AREA):
+    def __init__(self, blurred_img, min_psf_size=3, step=2, max_psf_size=23, inter_type=cv.INTER_AREA):
         """
         Конструктор
-        :param sharp_img: четкое изображение
         :param blurred_img: размытое изображение
         :param min_psf_size: минимальное разрешение ядра
         :param step: приращение разрешения ядра при переходе на новый уровень пирамиды
@@ -19,7 +19,7 @@ class ScalePyramidRef(object):
         :param inter_type: вид интерполяции
         """
         self.__get_sizes(min_psf_size, step, max_psf_size)
-        self.__build(sharp_img, blurred_img, max_psf_size, inter_type)
+        self.__build(blurred_img, max_psf_size, inter_type)
 
     @property
     def psf_sizes(self):
@@ -37,10 +37,9 @@ class ScalePyramidRef(object):
         """
         return self.__images
 
-    def __build(self, sharp_img, blurred_img, min_psf_size, inter_type):
+    def __build(self, blurred_img, min_psf_size, inter_type):
         """
         Построить пирамиду
-        :param sharp_img: четкое изображение
         :param blurred_img: искаженное изображение
         :param min_psf_size: максимальный размер ядра (разрешение функции искажения)
         :param inter_type: вид интерполяции
@@ -49,14 +48,11 @@ class ScalePyramidRef(object):
         for size in self.__psf_sizes:
             multiplier = size / min_psf_size
             if multiplier != 1:
-                sharp_resized = cv.resize(sharp_img, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
                 blurred_resized = cv.resize(blurred_img, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
             else:
-                sharp_resized = sharp_img.copy()
                 blurred_resized = blurred_img.copy()
-            sharp_resized = ImgUtils.im2double(sharp_resized)
             blurred_resized = ImgUtils.im2double(blurred_resized)
-            self.__images[size] = (sharp_resized, blurred_resized)
+            self.__images[size] = blurred_resized
 
     def __get_sizes(self, min_psf_size, step, max_psf_size):
         """

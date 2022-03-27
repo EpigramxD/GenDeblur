@@ -1,18 +1,17 @@
 import copy
+import multiprocessing as mp
+import time
 
 import cv2 as cv
-import time
-import multiprocessing as mp
-import numpy as np
 
-from gen_ref.ref_population import PopulationRef
+from gen_ref.ref_population import Population
 from utils.imgDeconv import ImgDeconv
 from utils.imgQuality import ImgQuality
 from utils.imgUtils import ImgUtils
-from utils.scalePyramid import ScalePyramidRef
+from utils.scalePyramid import ScalePyramid
 from .crossoverOperators import CrossoverOperators
-from .selectionOperators import SelectionOperators
 from .mutationOperators import MutationOperators
+from .selectionOperators import SelectionOperators
 
 
 # TODO: ОТРЕФАКТОРИТЬ
@@ -82,23 +81,19 @@ class GenDeblurrer(object):
         self.__upscale_type = upscale_type
         self.__multiprocessing_manager = multiprocessing_manager
 
-    def deblur(self, sharp_img, blurred_img):
-        sharp_img_gray = ImgUtils.to_grayscale(sharp_img)
-        sharp_img_gray = ImgUtils.im2double(sharp_img_gray)
-
+    def deblur(self, blurred_img):
         blurred_img_gray = ImgUtils.to_grayscale(blurred_img)
         blurred_img_gray = ImgUtils.im2double(blurred_img_gray)
 
-        scale_pyramid = ScalePyramidRef(sharp_img_gray, blurred_img_gray,
-                                        self.__pyramid_args["min_psf_size"],
-                                        self.__pyramid_args["step"],
-                                        self.__pyramid_args["max_psf_size"],
-                                        self.__pyramid_args["inter_type"])
-        self.__population = PopulationRef(scale_pyramid, expand_factor=self.__population_expand_factor)
+        scale_pyramid = ScalePyramid(blurred_img_gray,
+                                     self.__pyramid_args["min_psf_size"],
+                                     self.__pyramid_args["step"],
+                                     self.__pyramid_args["max_psf_size"],
+                                     self.__pyramid_args["inter_type"])
+        self.__population = Population(scale_pyramid, expand_factor=self.__population_expand_factor)
 
         best_quality_in_pop = -10000000000.0
         upscale_flag = 0
-        best_ever_kernel = np.zeros(sharp_img_gray.shape)
         best_kernels = []
 
         for i in range(0, len(scale_pyramid.psf_sizes), 1):

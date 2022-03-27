@@ -1,11 +1,11 @@
 import copy
-import cv2 as cv
-import numpy as np
+
 from gen.individual import Individual
 from utils.imgDeconv import ImgDeconv
 from utils.imgQuality import ImgQuality
 
-class PopulationRef:
+
+class Population:
     """
     Класс популяции
     """
@@ -19,8 +19,7 @@ class PopulationRef:
         self.__scale_pyramid = scale_pyramid
         self.__expand_factor = expand_factor
         self.__current_psf_size = scale_pyramid.psf_sizes[0]
-        self.__sharp = self.__scale_pyramid.images[self.__current_psf_size][0]
-        self.__blurred = self.__scale_pyramid.images[self.__current_psf_size][1]
+        self.__blurred = self.__scale_pyramid.images[self.__current_psf_size]
         # обновить размер популяции
         self.__update_pop_size()
         # создание особей
@@ -33,10 +32,6 @@ class PopulationRef:
     @property
     def scale_pyramid(self):
         return self.__scale_pyramid
-
-    @property
-    def sharp(self):
-        return self.__sharp
 
     @property
     def blurred(self):
@@ -73,7 +68,7 @@ class PopulationRef:
         self.__individuals.sort(key=lambda x: x.score, reverse=True)
 
 
-        # TODO: рассмотреть варинат с оценкой по отдельности
+        # TODO: рассмотреть варинат с оценкой по отдельности (по составляющим метрики)
         # for individual in self.__individuals:
         #     deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
         #     individual.score = ImgQuality.test_map_metric(deblurred_image, self.__blurred)
@@ -126,8 +121,7 @@ class PopulationRef:
         # расширение популяции
         self.__expand_population()
         # получить следующее по размеру размытое изображение из пирамиды
-        self.__sharp = copy.deepcopy(self.__scale_pyramid.images[self.__current_psf_size][0])
-        self.__blurred = copy.deepcopy(self.__scale_pyramid.images[self.__current_psf_size][1])
+        self.__blurred = copy.deepcopy(self.__scale_pyramid.images[self.__current_psf_size])
         # апскейльнуть каждую особь
         for individual in self.__individuals:
             if upscale_type == "pad":
@@ -136,25 +130,3 @@ class PopulationRef:
                 individual.upscale_fill(self.__current_psf_size)
 
         print(f"POPULATION UPSCALED TO SIZE: {self.__current_psf_size}")
-
-    def display(self):
-        count_in_row = int(self.__size / 10)
-        count_in_col = 10
-
-        width = count_in_row * self.__current_psf_size
-        height = count_in_col * self.__current_psf_size
-
-        mat = np.zeros((height, width), np.float32)
-
-        i = 0
-        j = 0
-        for ind in self.__individuals:
-            mat[i * self.__current_psf_size:i * self.__current_psf_size + self.__current_psf_size, j * self.__current_psf_size:j * self.__current_psf_size + self.__current_psf_size] = copy.deepcopy(ind.psf)
-
-            j += 1
-            if j == count_in_row:
-                j = 0
-                i += 1
-
-            if i == count_in_col:
-                cv.imshow("all kernels", cv.resize(mat, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
