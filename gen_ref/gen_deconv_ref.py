@@ -38,6 +38,7 @@ if __name__ == '__main__':
                              pyramid_args=PYRAMID_ARGS,
                              elite_count=ELITE_COUNT,
                              population_expand_factor=POPULATION_EXPAND_FACTOR,
-                             upscale_type=UPSCALE_TYPE)
+                             upscale_type=UPSCALE_TYPE,
+                             multiprocessing_manager=mp_manager)
     deblurrer.deblur(blurred)
 
