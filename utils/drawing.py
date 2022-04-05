@@ -26,3 +26,13 @@ def draw_line(shape, length, angle):
     cv.normalize(line_img, line_img, 0.0, 1.0, cv.NORM_MINMAX)
     return line_img
 
+
+def draw_gaussian(size, sigma, amplitude=1.0):
+    result = np.zeros(size, np.float32)
+    for r in range(0, size[0], 1):
+        for c in range(0, size[1], 1):
+            x = ((c - size[1] / 2) * (c - size[1] / 2)) / (2.0 * sigma * sigma)
+            y = ((r - size[0] / 2) * (r - size[0] / 2)) / (2.0 * sigma * sigma)
+            result[r, c] = amplitude * math.exp(-(x + y))
+    cv.normalize(result, result, 0, 1, cv.NORM_MINMAX)
+    return result
