@@ -1,4 +1,8 @@
 import multiprocessing as mp
+
+import cv2
+
+import utils.drawing as drawing
 from utils.size_utils import *
 from gen.genDeblurrer import GenDeblurrer
 # константы
@@ -9,8 +13,8 @@ REF_METRIC = "ssim"
 DECONV_TYPE = "wiener"
 SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 2}
 CROSSOVER_ARGS = {"type" : "uniform", "probability" : 0.9}
-MUTATION_ARGS = {"type" : "smart", "probability" : 0.1, "pos_probability" : 0.1}
-PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 4, "max_psf_size" : 23, "inter_type": cv.INTER_AREA}
+MUTATION_ARGS = {"type" : "smart", "probability" : 0.1, "pos_probability" : 0.1} # можно 0.5
+PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 4, "max_psf_size" : 23}
 ELITE_COUNT = 1
 POPULATION_EXPAND_FACTOR = 40
 
@@ -18,11 +22,13 @@ POPULATION_EXPAND_FACTOR = 40
 sharp = cv.imread("../images/sharp/bstu2.jpg", cv.IMREAD_GRAYSCALE)
 sharp = sharp ** (1/2.2)
 
+# psf = drawing.draw_gaussian(sharp.shape, 3.0)
 psf = cv.imread("../images/psfs/2.png", cv.IMREAD_GRAYSCALE)
-psf = ImgUtils.pad_to_shape(psf, sharp.shape)
-blurred = ImgUtils.freq_filter(sharp, psf)
-cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
+# psf = ImgUtils.pad_to_shape(psf, sharp.shape)
 
+blurred = ImgUtils.freq_filter(sharp, psf)
+# blurred = cv2.GaussianBlur(sharp, (11, 11), 0)
+cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
 
 if __name__ == '__main__':
     mp.freeze_support()

@@ -88,8 +88,7 @@ class GenDeblurrer(object):
         scale_pyramid = ScalePyramid(blurred_img_gray,
                                      self.__pyramid_args["min_psf_size"],
                                      self.__pyramid_args["step"],
-                                     self.__pyramid_args["max_psf_size"],
-                                     self.__pyramid_args["inter_type"])
+                                     self.__pyramid_args["max_psf_size"])
         self.__population = Population(scale_pyramid, expand_factor=self.__population_expand_factor)
 
         best_quality_in_pop = -10000000000.0
@@ -154,9 +153,11 @@ class GenDeblurrer(object):
                 selected_individuals = SelectionOperators.select(non_elite_individuals, self.__selection_args[0])
                 # скрещивание
                 crossed_individuals = CrossoverOperators.crossover(selected_individuals, self.__crossover_args[0])
+
                 # мутация
                 # с ростом разрешения ядра вероятность увеличения белых пикселей растет
                 # self.__mutation_args[0]["pos_probability"] += pop_count / 1000
+                # self.__mutation_args[0]["pos_probability"] = self.__population.current_psf_size / 30
                 mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_args[0])
                 # TODO: рассмотреть вариант с динамической положительной вероятностью мутации
                 # self.__mutation_args[0]["pos_probability"] = 2.7 * 1 / scale_pyramid.psf_sizes[i]
