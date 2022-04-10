@@ -9,17 +9,16 @@ class ScalePyramid(object):
     self.images - мапа. Ключ - разрешение ядра. Значение - tuple (четкое изображение, размытое изображение)
     """
 
-    def __init__(self, blurred_img, min_psf_size=3, step=2, max_psf_size=23, inter_type=cv.INTER_AREA):
+    def __init__(self, blurred_img, min_psf_size=3, step=2, max_psf_size=23):
         """
         Конструктор
         :param blurred_img: размытое изображение
         :param min_psf_size: минимальное разрешение ядра
         :param step: приращение разрешения ядра при переходе на новый уровень пирамиды
         :param max_psf_size: максимальный размер ядра
-        :param inter_type: вид интерполяции
         """
         self.__get_sizes(min_psf_size, step, max_psf_size)
-        self.__build(blurred_img, max_psf_size, inter_type)
+        self.__build(blurred_img, max_psf_size, cv.INTER_AREA)
 
     @property
     def psf_sizes(self):
