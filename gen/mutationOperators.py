@@ -4,6 +4,23 @@ import random
 
 
 class MutationOperators(object):
+    """
+    Обычное скрещивание
+    """
+    @staticmethod
+    def __dummy_mutation(individuals, probability):
+        mutated_individuals = copy.deepcopy(individuals)
+
+        for individual in mutated_individuals:
+            psf_size = individual.psf_size
+            for row in range(0, psf_size, 1):
+                for col in range(0, psf_size, 1):
+                    if random.random() < probability:
+                        individual.psf[col, row] += random.uniform(-5.0, 5.0)
+                        if individual.psf[col, row] < 0.0:
+                            individual.psf[col, row] = 0.0
+                        elif individual.psf[col, row] > 1.0:
+                            individual.psf[col, row] = 1.0
 
     @staticmethod
     def __smart_mutation(individuals, probability, pos_probability):
@@ -57,3 +74,5 @@ class MutationOperators(object):
             except KeyError:
                 raise AttributeError("Define pos_probability for smart_mutation")
             return MutationOperators.__smart_mutation(individuals, probability, pos_probability=pos_probability)
+        elif type == "dummy":
+            return MutationOperators.__dummy_mutation(individuals, probability)
