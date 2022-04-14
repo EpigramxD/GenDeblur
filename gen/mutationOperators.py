@@ -21,6 +21,9 @@ class MutationOperators(object):
                             individual.psf[col, row] = 0.0
                         elif individual.psf[col, row] > 1.0:
                             individual.psf[col, row] = 1.0
+            individual.normalize()
+
+        return mutated_individuals
 
     @staticmethod
     def __smart_mutation(individuals, probability, pos_probability):
