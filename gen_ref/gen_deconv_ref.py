@@ -7,23 +7,23 @@ from utils.size_utils import *
 from gen.genDeblurrer import GenDeblurrer
 # константы
 STAGNATION_POPULATION_COUNT = 20
-UPSCALE_TYPE = "fill"
+UPSCALE_TYPE = "pad"
 NO_REF_METRIC = "fourier"
 REF_METRIC = "ssim"
 DECONV_TYPE = "wiener"
-SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 2}
+SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 5}
 CROSSOVER_ARGS = {"type" : "uniform", "probability" : 0.9}
-MUTATION_ARGS = {"type" : "smart", "probability" : 0.1, "pos_probability" : 0.1} # можно 0.5
-PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 4, "max_psf_size" : 23}
+MUTATION_ARGS = {"type" : "smart", "probability" : 0.1, "pos_probability" : 0.5} # можно 0.5
+PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 2, "max_psf_size" : 23}
 ELITE_COUNT = 1
 POPULATION_EXPAND_FACTOR = 40
 
 # четкое изображение
-sharp = cv.imread("../images/sharp/bstu2.jpg", cv.IMREAD_GRAYSCALE)
+sharp = cv.imread("../images/sharp/bstu1.jpg", cv.IMREAD_GRAYSCALE)
 sharp = sharp ** (1/2.2)
 
 # psf = drawing.draw_gaussian(sharp.shape, 3.0)
-psf = cv.imread("../images/psfs/2.png", cv.IMREAD_GRAYSCALE)
+psf = cv.imread("../images/psfs/3.png", cv.IMREAD_GRAYSCALE)
 # psf = ImgUtils.pad_to_shape(psf, sharp.shape)
 
 blurred = ImgUtils.freq_filter(sharp, psf)
