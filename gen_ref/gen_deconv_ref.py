@@ -7,14 +7,14 @@ from utils.size_utils import *
 from gen.genDeblurrer import GenDeblurrer
 # константы
 STAGNATION_POPULATION_COUNT = 20
-UPSCALE_TYPE = "pad"
+UPSCALE_TYPE = "fill"
 NO_REF_METRIC = "fourier"
 REF_METRIC = "ssim"
 DECONV_TYPE = "wiener"
-SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 5}
+SELECTION_ARGS = {"type" : "tournament", "k" : 3, "tournsize" : 5} # можно 5
 CROSSOVER_ARGS = {"type" : "uniform", "probability" : 0.9}
 MUTATION_ARGS = {"type" : "smart", "probability" : 0.1, "pos_probability" : 0.5} # можно 0.5
-PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 2, "max_psf_size" : 23}
+PYRAMID_ARGS = {"min_psf_size" : 3, "step" : 4, "max_psf_size" : 23}
 ELITE_COUNT = 1
 POPULATION_EXPAND_FACTOR = 40
 
