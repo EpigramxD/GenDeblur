@@ -39,7 +39,7 @@ sharp = cv.imread("../images/sharp/lena.png", cv.IMREAD_GRAYSCALE)
 sharp = sharp ** (1/2.2)
 
 # psf = drawing.draw_gaussian(sharp.shape, 3.0)
-psf = cv.imread("../images/psfs/1.png", cv.IMREAD_GRAYSCALE)
+psf = cv.imread("../images/psfs/3.png", cv.IMREAD_GRAYSCALE)
 # psf = ImgUtils.pad_to_shape(psf, sharp.shape)
 
 blurred = ImgUtils.freq_filter(sharp, psf)

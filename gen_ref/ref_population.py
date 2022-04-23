@@ -66,7 +66,8 @@ class Population:
             width = self.__blurred.shape[1]
 
             blurred_area = height * width
-            sharp_strength = blurred_area
+            sharp_strength = blurred_area * 5
+            sharp_strength = 15000
             individual.score = ImgQuality.test_map_metric(deblurred_image, self.__blurred)
             individual.score += sharp_strength * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
 
