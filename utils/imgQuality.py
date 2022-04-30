@@ -355,9 +355,11 @@ class ImgQuality(object):
         lamb = 0.0003
         p = 100000000.0
         dif = sharp_img - blurred_img
-        x = 0.5 * np.linalg.norm(dif, ord=2) * np.linalg.norm(dif, ord=2)
-        y = (lamb/2.0) * np.power(np.sum(np.power(np.absolute(sharp_img), p)), 1.0/p)
-        return -1 * (x + y)
+        difFrobNorm = np.linalg.norm(dif, ord=2)
+        x = 0.5 * difFrobNorm * difFrobNorm
+        # y = (lamb/2.0) * np.power(np.sum(np.power(np.absolute(sharp_img), p)), 1.0/p)
+        # return -1 * (x + y)
+        return -1 * x
 
 
     @staticmethod
