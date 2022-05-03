@@ -1,7 +1,7 @@
 import multiprocessing as mp
 
 import cv2
-
+from utils import misc
 import utils.drawing as drawing
 from utils.size_utils import *
 from gen.genDeblurrer import GenDeblurrer
@@ -35,14 +35,17 @@ ELITE_COUNT = 1
 POPULATION_EXPAND_FACTOR = 40
 
 # четкое изображение
-sharp = cv.imread("../images/sharp/lena.png", cv.IMREAD_GRAYSCALE)
+sharp = cv.imread("../images/sharp/bstu1.jpg", cv.IMREAD_GRAYSCALE)
 sharp = sharp ** (1/2.2)
 
 # psf = drawing.draw_gaussian(sharp.shape, 3.0)
-psf = cv.imread("../images/psfs/3.png", cv.IMREAD_GRAYSCALE)
+psf = cv.imread("../images/psfs/1.png", cv.IMREAD_GRAYSCALE)
 # psf = ImgUtils.pad_to_shape(psf, sharp.shape)
 
 blurred = ImgUtils.freq_filter(sharp, psf)
+blurred = misc.get_noisy_image(blurred, 0.0122135)
+# cv.imshow("blurred", blurred)
+# cv.waitKey()
 # blurred = cv2.GaussianBlur(sharp, (11, 11), 0)
 cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
 

@@ -22,11 +22,15 @@ def crop_image(image, crop_width_size, crop_height_size):
     return copy.deepcopy(image[h_start:h_finish, w_start:w_finish])
 
 
-def get_noisy_image(image):
+def get_noisy_image(image, sigma):
+    """
+    Наложить шум на изображение
+    :param image:
+    :param sigma:
+    :return:
+    """
     row, col = image.shape
     mean = 0
-    var = 0.002
-    sigma = var ** 0.5
     gauss = np.random.normal(mean, sigma, (row, col))
     gauss = gauss.reshape(row, col)
     noisy = image + gauss
