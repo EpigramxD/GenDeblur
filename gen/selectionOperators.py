@@ -40,7 +40,7 @@ class SelectionOperators(object):
         # Свитчим вид селекции
         if type == "tournament":
             try:
-                tournsize = selection_args['tournsize']
+                tournsize = selection_args['tournament_size']
                 if not isinstance(tournsize, int):
                     raise AttributeError("Wrong types of arguments")
                 return SelectionOperators.__select_tournament(individuals, k, tournsize)

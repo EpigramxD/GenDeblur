@@ -52,79 +52,87 @@ def mp_fit(blurred, mp_manager, deconv_type, no_ref_metric_type, all_population_
 
 
 class GenDeblurrer(object):
-    def __init__(self, stagnation_pop_count,
-                 ref_metric_type,
-                 no_ref_metric_type,
-                 deconv_type,
-                 selection_args,
-                 crossover_args,
-                 mutation_args,
-                 pyramid_args,
-                 population_expand_factor,
-                 elite_count,
-                 upscale_type,
-                 multiprocessing_manager):
+    def __init__(self, configuration, mp_manager):
+        # конфигурация селекции
+        self.__selection_config = configuration["selection"]
+        # конфигурация скрещивания
+        self.__crossover_config = configuration["crossover"]
+        # конфигурация мутации
+        self.__mutation_config = configuration["mutation"]
+        # конфигурация пирамиды
+        self.__pyramid_config = configuration["pyramid"]
+        self.__stagnation_pop_count = configuration["stagnation_population_count"]
+        self.__elite_count = configuration["elite_individuals_count"]
+        self.__ref_metric_type = configuration["ref_metric_type"]
+        self.__no_ref_metric_type = configuration["sharpness_metric_type"]
+        self.__deconv_type = configuration["deconvolution_type"]
 
-        self.__stagnation_pop_count = stagnation_pop_count
-        # параметры селекции
-        self.__selection_args = selection_args,
-        # параметры скрещивания
-        self.__crossover_args = crossover_args,
-        # парамеры мутации
-        self.__mutation_args = mutation_args,
-        self.__elite_count = elite_count
-        self.__ref_metric_type = ref_metric_type
-        self.__no_ref_metric_type = no_ref_metric_type
-        self.__deconv_type = deconv_type
-        self.__pyramid_args = pyramid_args
-        self.__population_expand_factor = population_expand_factor
-        self.__upscale_type = upscale_type
-        self.__multiprocessing_manager = multiprocessing_manager
+        self.__size = configuration["population_size"]
+        self.__upscale_type = configuration["upscale_type"]
+        self.__multiprocessing_manager = mp_manager
+
+    def __get_best_cpu_count(self):
+        # считаем, что выгоднее использовать по времени
+        cpu_count = mp.cpu_count()
+
+        start = time.time()
+        self.__population.fit(self.__no_ref_metric_type, self.__ref_metric_type, self.__deconv_type)
+        end = time.time()
+        single_process_time = end - start
+
+        start = time.time()
+        mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
+               self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 4))
+        end = time.time()
+        mp_quad_time = end - start
+
+        if single_process_time < mp_quad_time:
+            cpu_count = 1
+        else:
+            start = time.time()
+            mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
+                   self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 2))
+            end = time.time()
+            mp_half_time = end - start
+            if mp_quad_time < mp_half_time:
+                cpu_count = int(cpu_count / 4)
+            else:
+                cpu_count = int(cpu_count / 2)
+        return cpu_count
+
+    def __write_result_for_pyramid_level(self):
+        best_result_for_size = ImgDeconv.do_deconv(self.__population.blurred, self.__population.individuals[0].psf,
+                                                   type=self.__deconv_type)
+        cv.normalize(best_result_for_size, best_result_for_size, 0.0, 255.0, cv.NORM_MINMAX)
+
+        lel_test = copy.deepcopy(self.__population.individuals[0].psf)
+        best_kernel_for_size = cv.resize(lel_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA)
+        cv.normalize(best_kernel_for_size, best_kernel_for_size, 0, 255, cv.NORM_MINMAX)
+
+        blurred_normalized = copy.deepcopy(self.__population.blurred)
+        cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
+
+        result_file_name = "../images/results/restored_size_{}.jpg".format(self.__population.current_psf_size)
+        blurred_file_name = "../images/results/blurred_size_{}.jpg".format(self.__population.current_psf_size)
+        kernel_file_name = "../images/results/kernel_size_{}.jpg".format(self.__population.current_psf_size)
+
+        cv.imwrite(result_file_name, best_result_for_size)
+        cv.imwrite(kernel_file_name, best_kernel_for_size)
+        cv.imwrite(blurred_file_name, blurred_normalized)
 
     def deblur(self, blurred_img):
         blurred_img_gray = ImgUtils.to_grayscale(blurred_img)
         blurred_img_gray = ImgUtils.im2double(blurred_img_gray)
-
         scale_pyramid = ScalePyramid(blurred_img_gray,
-                                     self.__pyramid_args["min_psf_size"],
-                                     self.__pyramid_args["step"],
-                                     self.__pyramid_args["max_psf_size"])
-        self.__population = Population(scale_pyramid, expand_factor=self.__population_expand_factor)
-
+                                     self.__pyramid_config["min_resolution"],
+                                     self.__pyramid_config["step"],
+                                     self.__pyramid_config["max_resolution"])
+        self.__population = Population(scale_pyramid, population_size=self.__size)
         best_quality_in_pop = -10000000000.0
         upscale_flag = 0
-        best_kernels = []
-        mutation_pos_prob_start = self.__mutation_args[0]["pos_probability"]
-
         for i in range(0, len(scale_pyramid.psf_sizes), 1):
-            self.__mutation_args[0]["pos_probability"] = mutation_pos_prob_start
             pop_count = 0
-            # считаем, что выгоднее использовать по времени
-            cpu_count = mp.cpu_count()
-
-            start = time.time()
-            self.__population.fit(self.__no_ref_metric_type, self.__ref_metric_type, self.__deconv_type)
-            end = time.time()
-            single_process_time = end - start
-
-            start = time.time()
-            mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
-                   self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 4))
-            end = time.time()
-            mp_quad_time = end - start
-
-            if single_process_time < mp_quad_time:
-                cpu_count = 1
-            else:
-                start = time.time()
-                mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
-                       self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 2))
-                end = time.time()
-                mp_half_time = end - start
-                if mp_quad_time < mp_half_time:
-                    cpu_count = int(cpu_count / 4)
-                else:
-                    cpu_count = int(cpu_count / 2)
+            cpu_count = self.__get_best_cpu_count()
 
             while True:
                 if upscale_flag == self.__stagnation_pop_count:
@@ -143,24 +151,16 @@ class GenDeblurrer(object):
 
                 if self.__population.individuals[0].score > best_quality_in_pop:
                     best_quality_in_pop = copy.deepcopy(self.__population.individuals[0].score)
-                    best_ever_kernel = copy.deepcopy(self.__population.individuals[0].psf)
-                    best_kernels.append(copy.deepcopy(self.__population.individuals[0].psf))
                     upscale_flag = 0
 
                 # селекция
                 elite_individuals, non_elite_individuals = self.__population.get_elite_non_elite(self.__elite_count)
-                self.__selection_args[0]["k"] = len(non_elite_individuals)
-                selected_individuals = SelectionOperators.select(non_elite_individuals, self.__selection_args[0])
+                self.__selection_config["k"] = len(non_elite_individuals)
+                selected_individuals = SelectionOperators.select(non_elite_individuals, self.__selection_config)
                 # скрещивание
-                crossed_individuals = CrossoverOperators.crossover(selected_individuals, self.__crossover_args[0])
-
+                crossed_individuals = CrossoverOperators.crossover(selected_individuals, self.__crossover_config)
                 # мутация
-                # с ростом разрешения ядра вероятность увеличения белых пикселей растет
-                # self.__mutation_args[0]["pos_probability"] += pop_count / 1000
-                # self.__mutation_args[0]["pos_probability"] = self.__population.current_psf_size / 30
-                mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_args[0])
-                # TODO: рассмотреть вариант с динамической положительной вероятностью мутации
-                # self.__mutation_args[0]["pos_probability"] = 2.7 * 1 / scale_pyramid.psf_sizes[i]
+                mutated_individuals = MutationOperators.mutate(crossed_individuals, self.__mutation_config)
 
                 # обновление особей популяции
                 self.__population.individuals.clear()
@@ -171,66 +171,15 @@ class GenDeblurrer(object):
 
             # апскейлим
             if i != len(scale_pyramid.psf_sizes) - 1:
-                # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
-                # for kernel in best_kernels:
-                #     xd_test += kernel
-                # xd_test += population.individuals[0].psf
-                # cv.normalize(xd_test, xd_test, 0.0, 1.0, cv.NORM_MINMAX)
-                # best_kernels.clear()
-                # cv.imshow("xd_test", cv.resize(xd_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
-
-                # ЗАПИСЬ
-                best_result_for_size = ImgDeconv.do_deconv(self.__population.blurred, self.__population.individuals[0].psf, type=self.__deconv_type)
-                cv.normalize(best_result_for_size, best_result_for_size, 0.0, 255.0, cv.NORM_MINMAX)
-
-                lel_test = copy.deepcopy(self.__population.individuals[0].psf)
-                best_kernel_for_size = cv.resize(lel_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA)
-                cv.normalize(best_kernel_for_size, best_kernel_for_size, 0, 255, cv.NORM_MINMAX)
-                # cv.imshow("best_kernel_for_size", best_kernel_for_size)
-
-                blurred_normalized = copy.deepcopy(self.__population.blurred)
-                cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
-
-                result_file_name = "../images/results/restored_size_{}.jpg".format(self.__population.current_psf_size)
-                blurred_file_name = "../images/results/blurred_size_{}.jpg".format(self.__population.current_psf_size)
-                kernel_file_name = "../images/results/kernel_size_{}.jpg".format(self.__population.current_psf_size)
-
-                cv.imwrite(result_file_name, best_result_for_size)
-                cv.imwrite(kernel_file_name, best_kernel_for_size)
-                cv.imwrite(blurred_file_name, blurred_normalized)
+                self.__write_result_for_pyramid_level()
 
                 best_quality_in_pop = -10000000000.0
                 self.__population.upscale(self.__upscale_type)
 
             if i == len(scale_pyramid.psf_sizes) - 1:
-                # xd_test = np.zeros((population.kernel_size, population.kernel_size), np.float32)
-                # for kernel in best_kernels:
-                #     xd_test += kernel
-                # xd_test += population.individuals[0].psf
-                # cv.normalize(xd_test, xd_test, 0.0, 1.0, cv.NORM_MINMAX)
-                # best_kernels.clear()
-                # cv.imshow("xd_test", cv.resize(xd_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA))
+                self.__write_result_for_pyramid_level()
 
-                # ЗАПИСЬ
-                self.__population.fit(self.__no_ref_metric_type, self.__ref_metric_type, self.__deconv_type)
-                best_result_for_size = ImgDeconv.do_deconv(self.__population.blurred, self.__population.individuals[0].psf, type=self.__deconv_type)
-                cv.normalize(best_result_for_size, best_result_for_size, 0.0, 255.0, cv.NORM_MINMAX)
-
-                lel_test = copy.deepcopy(self.__population.individuals[0].psf)
-                best_kernel_for_size = cv.resize(lel_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA)
-                cv.normalize(best_kernel_for_size, best_kernel_for_size, 0, 255, cv.NORM_MINMAX)
-                # cv.imshow("best_kernel_for_size", best_kernel_for_size)
-
-                blurred_normalized = copy.deepcopy(self.__population.blurred)
-                cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
-
-                result_file_name = "../images/results/restored_size_{}.jpg".format(self.__population.current_psf_size)
-                blurred_file_name = "../images/results/blurred_size_{}.jpg".format(self.__population.current_psf_size)
-                kernel_file_name = "../images/results/kernel_size_{}.jpg".format(self.__population.current_psf_size)
-
-                cv.imwrite(result_file_name, best_result_for_size)
-                cv.imwrite(kernel_file_name, best_kernel_for_size)
-                cv.imwrite(blurred_file_name, blurred_normalized)
-                # ЗАПИСЬ
-
-        return ImgDeconv.do_deconv(self.__population.blurred, self.__population.individuals[0].psf, self.__deconv_type, K=1.0)
+        return ImgDeconv.do_deconv(self.__population.blurred,
+                                   self.__population.individuals[0].psf,
+                                   self.__deconv_type, K=1.0),\
+               self.__population.individuals[0].psf

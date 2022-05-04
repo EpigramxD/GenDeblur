@@ -1,0 +1,26 @@
+stagnation_population_count: 40
+population_size: 40
+upscale_type: pad
+sharpness_metric_type: fourier
+ref_metric_type: frobenius
+deconvolution_type: wiener
+elite_individuals_count: 5
+
+selection:
+  type: tournament
+  k: 3
+  tournament_size: 5
+
+crossover:
+  type: uniform
+  probability: 0.9
+
+mutation:
+  type: smart
+  probability: 0.1
+  positive_mutation_probability: 0.5
+
+pyramid:
+  min_resolution: 3
+  step: 2
+  max_resolution: 23

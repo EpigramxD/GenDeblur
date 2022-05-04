@@ -9,15 +9,16 @@ class Population:
     """
     Класс популяции
     """
-    def __init__(self, scale_pyramid, expand_factor=10):
+    def __init__(self, scale_pyramid, population_size=10):
         """
         Конструктор
         :param scale_pyramid: scale-пирамида
-        :param expand_factor: множитель, определяющий во сколько раз увеличится количество особей в популяции
+        :param population_size: количество особей в популяции
         """
         # текущий размер ядра
         self.__scale_pyramid = scale_pyramid
-        self.__expand_factor = expand_factor
+        self.__size = population_size
+        self.__minimum_size = population_size
         self.__current_psf_size = scale_pyramid.psf_sizes[0]
         self.__blurred = self.__scale_pyramid.images[self.__current_psf_size]
         # обновить размер популяции
@@ -60,32 +61,12 @@ class Population:
         """
         for individual in self.__individuals:
             deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
-            #individual.score = ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type) + ImgQuality.get_ref_quality(self.__sharp, deblurred_image, ref_metric_type)
-            #individual.score = ImgQuality.frob_metric_simple(deblurred_image, self.__blurred, individual.psf) + 100000 * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
-            height = self.__blurred.shape[0]
-            width = self.__blurred.shape[1]
 
-            blurred_area = height * width
-            sharp_strength = blurred_area * 5
             sharp_strength = 15000
             individual.score = ImgQuality.test_map_metric(deblurred_image, self.__blurred)
             individual.score += sharp_strength * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
 
-            #individual.score = ImgQuality.frob_metric2(deblurred_image, self.__blurred, individual.psf) + ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
-            #individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.__sharp, deblurred_image, self.ref_metric)
         self.__individuals.sort(key=lambda x: x.score, reverse=True)
-
-
-        # TODO: рассмотреть варинат с оценкой по отдельности (по составляющим метрики)
-        # for individual in self.__individuals:
-        #     deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
-        #     individual.score = ImgQuality.test_map_metric(deblurred_image, self.__blurred)
-        # self.__individuals.sort(key=lambda x: x.score, reverse=True)
-        #
-        # for i in range(0, len(self.__individuals), 1):
-        #     individual = self.__individuals[i]
-        #     deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
-        #     individual.score = (5000 * (1 + 1 / (1 + i))) * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
 
 
     def get_elite_non_elite(self, elite_count):
@@ -101,7 +82,7 @@ class Population:
         Обновление размера популяции
         :return:
         """
-        self.__size = int(self.__current_psf_size + self.__expand_factor)
+        self.__size = self.__minimum_size + self.__current_psf_size
         print("POPULATION SIZE UPDATED")
 
     def __expand_population(self):

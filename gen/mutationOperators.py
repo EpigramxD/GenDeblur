@@ -71,9 +71,9 @@ class MutationOperators(object):
 
         if type == "smart":
             try:
-                pos_probability = mutation_args["pos_probability"]
+                pos_probability = mutation_args["positive_mutation_probability"]
                 if not isinstance(pos_probability, float):
-                    raise AttributeError("pos_probability type should be string and prob should be float")
+                    raise AttributeError("positive_mutation_probability type should be string and prob should be float")
             except KeyError:
                 raise AttributeError("Define pos_probability for smart_mutation")
             return MutationOperators.__smart_mutation(individuals, probability, pos_probability=pos_probability)
