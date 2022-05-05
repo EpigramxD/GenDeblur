@@ -2,7 +2,7 @@ stagnation_population_count: 20
 population_size: 40
 upscale_type: pad
 sharpness_metric_type: fourier
-ref_metric_type: frobenius
+similarity_metric_type: frobenius
 deconvolution_type: wiener
 elite_individuals_count: 5
 

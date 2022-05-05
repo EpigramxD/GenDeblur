@@ -2,7 +2,8 @@ import copy
 
 from gen.individual import Individual
 from utils.imgDeconv import ImgDeconv
-from utils.imgQuality import ImgQuality
+from utils.imgMetrics import SharpnessMetrics
+from utils.imgMetrics import SimilarityMetrics
 
 
 class Population:
@@ -54,15 +55,14 @@ class Population:
     def size(self):
         return self.__size
 
-
-    def fit(self, no_ref_metric_type, ref_metric_type, deconv_type):
+    def fit(self, sharpness_metric_type, similarity_metric_type, deconv_type):
         """
         Оценка приспособленностей особей популяции
         """
         for individual in self.__individuals:
             deblurred_image = ImgDeconv.do_deconv(self.__blurred, individual.psf, deconv_type)
-            individual.score = ImgQuality.test_map_metric(deblurred_image, self.__blurred)
-            individual.score += ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
+            individual.score = SimilarityMetrics.get_similarity(deblurred_image, self.__blurred, similarity_metric_type)
+            individual.score += SharpnessMetrics.get_sharpness(deblurred_image, sharpness_metric_type)
 
         self.__individuals.sort(key=lambda x: x.score, reverse=True)
 

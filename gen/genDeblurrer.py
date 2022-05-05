@@ -6,21 +6,24 @@ import cv2 as cv
 
 from gen.population import Population
 from utils.imgDeconv import ImgDeconv
-from utils.imgQuality import ImgQuality
+from utils.imgMetrics import SharpnessMetrics
+from utils.imgMetrics import SimilarityMetrics
 from utils.imgUtils import ImgUtils
 from utils.scalePyramid import ScalePyramid
 from .crossoverOperators import CrossoverOperators
 from .mutationOperators import MutationOperators
 from .selectionOperators import SelectionOperators
 
-def fit_range(blurred, deconv_type, no_ref_metric_type, population_range, empty_list):
+
+def fit_range(blurred, deconv_type, similarity_metric_type, sharpness_metric_type, population_range, empty_list):
     for individual in population_range:
         deblurred_image = ImgDeconv.do_deconv(blurred, individual.psf, deconv_type)
-        individual.score = ImgQuality.test_map_metric(deblurred_image, blurred)
-        individual.score += ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
+        individual.score = SimilarityMetrics.get_similarity(deblurred_image, blurred, similarity_metric_type)
+        individual.score += SharpnessMetrics.get_sharpness(deblurred_image, sharpness_metric_type)
         empty_list.append(copy.deepcopy(individual))
 
-def mp_fit(blurred, mp_manager, deconv_type, no_ref_metric_type, all_population_individuals, process_count):
+
+def mp_fit(blurred, mp_manager, deconv_type, similarity_metric_type, sharpness_metric_type, all_population_individuals, process_count):
     population_size = len(all_population_individuals)
     population_step = int((population_size - (population_size % process_count)) / process_count)
     fitted_population_mp = mp_manager.list()
@@ -29,9 +32,9 @@ def mp_fit(blurred, mp_manager, deconv_type, no_ref_metric_type, all_population_
 
     for i in range(0, process_count, 1):
         if i != process_count - 1:
-            processes.append(mp.Process(target=fit_range, args=(copy.deepcopy(blurred), deconv_type, no_ref_metric_type, all_population_individuals[i * population_step: (i + 1) * population_step], fitted_population_mp)))
+            processes.append(mp.Process(target=fit_range, args=(copy.deepcopy(blurred), deconv_type, similarity_metric_type, sharpness_metric_type, all_population_individuals[i * population_step: (i + 1) * population_step], fitted_population_mp)))
         else:
-            processes.append(mp.Process(target=fit_range, args=(copy.deepcopy(blurred), deconv_type, no_ref_metric_type, all_population_individuals[i * population_step: population_size], fitted_population_mp)))
+            processes.append(mp.Process(target=fit_range, args=(copy.deepcopy(blurred), deconv_type, similarity_metric_type, sharpness_metric_type, all_population_individuals[i * population_step: population_size], fitted_population_mp)))
 
     for process in processes:
         process.start()
@@ -57,8 +60,8 @@ class GenDeblurrer(object):
         self.__pyramid_config = configuration["pyramid"]
         self.__stagnation_pop_count = configuration["stagnation_population_count"]
         self.__elite_count = configuration["elite_individuals_count"]
-        self.__ref_metric_type = configuration["ref_metric_type"]
-        self.__no_ref_metric_type = configuration["sharpness_metric_type"]
+        self.__similarity_metric_type = configuration["similarity_metric_type"]
+        self.__sharpness_metric_type = configuration["sharpness_metric_type"]
         self.__deconv_type = configuration["deconvolution_type"]
 
         self.__size = configuration["population_size"]
@@ -70,13 +73,13 @@ class GenDeblurrer(object):
         cpu_count = mp.cpu_count()
 
         start = time.time()
-        self.__population.fit(self.__no_ref_metric_type, self.__ref_metric_type, self.__deconv_type)
+        self.__population.fit(self.__sharpness_metric_type, self.__similarity_metric_type, self.__deconv_type)
         end = time.time()
         single_process_time = end - start
 
         start = time.time()
-        mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
-               self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 4))
+        mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__similarity_metric_type,
+               self.__sharpness_metric_type, self.__population.individuals, int(cpu_count / 4))
         end = time.time()
         mp_quad_time = end - start
 
@@ -84,8 +87,8 @@ class GenDeblurrer(object):
             cpu_count = 1
         else:
             start = time.time()
-            mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type,
-                   self.__no_ref_metric_type, self.__population.individuals, int(cpu_count / 2))
+            mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__similarity_metric_type,
+                   self.__sharpness_metric_type, self.__population.individuals, int(cpu_count / 2))
             end = time.time()
             mp_half_time = end - start
             if mp_quad_time < mp_half_time:
@@ -135,9 +138,9 @@ class GenDeblurrer(object):
                 start = time.time()
 
                 if cpu_count == 1:
-                    self.__population.fit(self.__no_ref_metric_type, self.__ref_metric_type, self.__deconv_type)
+                    self.__population.fit(self.__sharpness_metric_type, self.__similarity_metric_type, self.__deconv_type)
                 else:
-                    self.__population.individuals = copy.deepcopy(mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__no_ref_metric_type, self.__population.individuals, cpu_count))
+                    self.__population.individuals = copy.deepcopy(mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__sharpness_metric_type, self.__population.individuals, cpu_count))
 
                 end = time.time()
                 print(f"ELAPSED TIME: {end-start}")
