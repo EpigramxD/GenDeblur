@@ -8,7 +8,7 @@ class MutationOperators(object):
     Обычное скрещивание
     """
     @staticmethod
-    def __dummy_mutation(individuals, probability):
+    def __random_mutation(individuals, probability):
         mutated_individuals = copy.deepcopy(individuals)
 
         for individual in mutated_individuals:
@@ -77,5 +77,5 @@ class MutationOperators(object):
             except KeyError:
                 raise AttributeError("Define pos_probability for smart_mutation")
             return MutationOperators.__smart_mutation(individuals, probability, pos_probability=pos_probability)
-        elif type == "dummy":
-            return MutationOperators.__dummy_mutation(individuals, probability)
+        elif type == "random":
+            return MutationOperators.__random_mutation(individuals, probability)
