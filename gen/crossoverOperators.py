@@ -68,4 +68,7 @@ class CrossoverOperators(object):
         if type == "uniform":
             return CrossoverOperators.__uniform_crossover(selected_individuals, probability)
         elif type == "blend":
-            return CrossoverOperators.__blend_crossover(selected_individuals)
+            alpha = crossover_args["alpha"]
+            if not isinstance(alpha, float):
+                raise AttributeError("Alpha parameter for blend crossover should be float")
+            return CrossoverOperators.__blend_crossover(selected_individuals, alpha)
