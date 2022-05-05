@@ -1,7 +1,7 @@
 import copy
 import multiprocessing as mp
 import time
-
+import yaml
 import cv2 as cv
 
 from gen.population import Population
@@ -50,6 +50,10 @@ def mp_fit(blurred, mp_manager, deconv_type, similarity_metric_type, sharpness_m
 
 class GenDeblurrer(object):
     def __init__(self, configuration, mp_manager):
+        if type(configuration) is str:
+            with open(configuration) as configuration_file:
+                configuration = yaml.safe_load(configuration_file)
+
         # конфигурация селекции
         self.__selection_config = configuration["selection"]
         # конфигурация скрещивания
@@ -65,7 +69,6 @@ class GenDeblurrer(object):
         self.__deconv_type = configuration["deconvolution_type"]
 
         self.__size = configuration["population_size"]
-        self.__upscale_type = configuration["upscale_type"]
         self.__multiprocessing_manager = mp_manager
 
     def __get_best_cpu_count(self):
@@ -171,12 +174,12 @@ class GenDeblurrer(object):
                 self.__write_result_for_pyramid_level()
 
                 best_quality_in_pop = -10000000000.0
-                self.__population.upscale(self.__upscale_type)
+                self.__population.upscale(self.__pyramid_config["upscale_type"])
 
             if i == len(scale_pyramid.psf_sizes) - 1:
                 self.__write_result_for_pyramid_level()
 
-        return ImgDeconv.do_deconv(self.__population.blurred,
+        return ImgDeconv.do_deconv(blurred_img,
                                    self.__population.individuals[0].psf,
                                    self.__deconv_type, K=1.0),\
                self.__population.individuals[0].psf

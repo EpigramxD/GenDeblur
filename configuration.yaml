@@ -1,6 +1,5 @@
 stagnation_population_count: 20
 population_size: 40
-upscale_type: pad
 sharpness_metric_type: fourier
 similarity_metric_type: frobenius
 deconvolution_type: wiener
@@ -8,7 +7,6 @@ elite_individuals_count: 5
 
 selection:
   type: tournament
-  k: 3
   tournament_size: 5
 
 crossover:
@@ -24,3 +22,4 @@ pyramid:
   min_resolution: 3
   step: 2
   max_resolution: 23
+  upscale_type: pad
