@@ -1,12 +1,9 @@
 import multiprocessing as mp
-from utils.imgUtils import ImgUtils
+
 import cv2 as cv
-import yaml
 
 from gen.genDeblurrer import GenDeblurrer
-
-with open("configuration.yaml") as configuration_file:
-    configuration = yaml.safe_load(configuration_file)
+from utils.imgUtils import ImgUtils
 
 # четкое изображение
 sharp = cv.imread("images/sharp/lena.png", cv.IMREAD_GRAYSCALE)
@@ -25,6 +22,6 @@ if __name__ == '__main__':
     mp.freeze_support()
 
     mp_manager = mp.Manager()
-    deblurrer = GenDeblurrer(configuration, mp_manager)
-    deblurrer.deblur(blurred)
+    deblurrer = GenDeblurrer("configuration.yaml", mp_manager)
+    deblurred_img, psf = deblurrer.deblur(blurred)
 

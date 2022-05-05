@@ -46,3 +46,5 @@ class SelectionOperators(object):
                 return SelectionOperators.__select_tournament(individuals, k, tournsize)
             except KeyError:
                 raise AttributeError("Pass tournsize (int)")
+        elif type == "random":
+            return SelectionOperators.__select_random(individuals, k)
