@@ -1,6 +1,7 @@
 import random
 import numpy as np
 
+
 class CrossoverOperators(object):
     @staticmethod
     def __uniform_crossover(selected_individuals, probability):

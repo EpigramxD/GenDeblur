@@ -68,7 +68,7 @@ class GenDeblurrer(object):
         self.__sharpness_metric_type = configuration["sharpness_metric_type"]
         self.__deconv_type = configuration["deconvolution_type"]
 
-        self.__size = configuration["population_size"]
+        self.__population_size = configuration["population_size"]
         self.__multiprocessing_manager = mp_manager
 
     def __get_best_cpu_count(self):
@@ -127,7 +127,7 @@ class GenDeblurrer(object):
                                      self.__pyramid_config["min_resolution"],
                                      self.__pyramid_config["step"],
                                      self.__pyramid_config["max_resolution"])
-        self.__population = Population(scale_pyramid, population_size=self.__size)
+        self.__population = Population(scale_pyramid, population_size=self.__population_size)
         best_quality_in_pop = -10000000000.0
         upscale_flag = 0
         for i in range(0, len(scale_pyramid.psf_sizes), 1):
