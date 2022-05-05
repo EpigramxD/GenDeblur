@@ -4,7 +4,7 @@ import time
 
 import cv2 as cv
 
-from gen_ref.ref_population import Population
+from gen.population import Population
 from utils.imgDeconv import ImgDeconv
 from utils.imgQuality import ImgQuality
 from utils.imgUtils import ImgUtils
@@ -13,19 +13,13 @@ from .crossoverOperators import CrossoverOperators
 from .mutationOperators import MutationOperators
 from .selectionOperators import SelectionOperators
 
-
-# TODO: ОТРЕФАКТОРИТЬ
 def fit_range(blurred, deconv_type, no_ref_metric_type, population_range, empty_list):
     for individual in population_range:
         deblurred_image = ImgDeconv.do_deconv(blurred, individual.psf, deconv_type)
-        # individual.score = ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type) + ImgQuality.get_ref_quality(self.__sharp, deblurred_image, ref_metric_type)
-        # individual.score = ImgQuality.frob_metric_simple(deblurred_image, self.__blurred, individual.psf) + 100000 * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
-        individual.score = ImgQuality.test_map_metric(deblurred_image, blurred) + 1000 * individual.psf_size * ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
-        #individual.score = ImgQuality.frob_metric2(deblurred_image, blurred, individual.psf) + ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
-        # individual.score = get_no_ref_quality(deblurred_image, self.no_ref_metric) #+ get_ref_qualiy(self.__sharp, deblurred_image, self.ref_metric)
+        individual.score = ImgQuality.test_map_metric(deblurred_image, blurred)
+        individual.score += ImgQuality.get_no_ref_quality(deblurred_image, no_ref_metric_type)
         empty_list.append(copy.deepcopy(individual))
 
-# TODO: ОТРЕФАКТОРИТЬ
 def mp_fit(blurred, mp_manager, deconv_type, no_ref_metric_type, all_population_individuals, process_count):
     population_size = len(all_population_individuals)
     population_step = int((population_size - (population_size % process_count)) / process_count)

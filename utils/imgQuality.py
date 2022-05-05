@@ -262,7 +262,7 @@ class ImgQuality(object):
         prepared_image = ImgUtils.to_grayscale(img)
         dft = ImgUtils.get_dft(prepared_image)
         dft_magnitude = ImgUtils.get_dft_magnitude(dft)
-        quality = cv.mean(dft_magnitude)[0]
+        quality = np.sum(dft_magnitude) / 6.5
         return quality
 
     @staticmethod
