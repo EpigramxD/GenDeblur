@@ -5,7 +5,7 @@ import random
 from utils.imgUtils import ImgUtils
 
 
-class Individual:
+class Individual(object):
     """
     Класс, представляющий особь
     """
@@ -66,25 +66,6 @@ class Individual:
         """
         self.__psf = ImgUtils.im2double(self.__psf)
 
-    def mutate(self, probability, pos_prob):
-        """
-        Мутация особи
-        :param probability: вероятность мутирования
-        :param pos_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
-        """
-        for row in range(0, self.__psf_size):
-            for col in range(0, self.__psf_size):
-                if random.random() < probability:
-                    if random.random() < pos_prob:
-                        self.__psf[row][col] += random.random()
-                        if self.__psf[row][col] > 1.0:
-                            self.__psf[row][col] = 1.0
-                    else:
-                        self.__psf[row][col] -= random.random()
-                        if self.__psf[row][col] < 0.0:
-                            self.__psf[row][col] = 0
-        self.normalize()
-
     def __get_random_vertical_neighbor(self, row):
         """
         Выбрать индекс случайного соседа по вертикали
@@ -120,35 +101,7 @@ class Individual:
     def get_random_neighbor_position(self, row, col):
         return self.__get_random_vertical_neighbor(row), self.__get_random_horizontal_neighbor(col)
 
-    def mutate_smart(self, probability, pos_prob):
-        """
-        Умная мутация особи
-        :param probability: вероятность мутирования
-        :param pos_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
-        """
-        bright_pixels = np.argwhere(self.__psf > 0.1)
-
-        for position in bright_pixels:
-            if random.random() < probability:
-                random_neighbor_position = self.get_random_neighbor_position(position[0], position[1])
-
-                if random.random() < pos_prob:
-                    try:
-                        self.__psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.1, 1.0)
-                        if self.__psf[random_neighbor_position[0], random_neighbor_position[1]] > 1.0:
-                            self.__psf[random_neighbor_position[0], random_neighbor_position[1]] = 1.0
-                    except IndexError:
-                        self.__psf[position[0], position[1]] += random.uniform(0.1, 1.0)
-                        if self.__psf[position[0], position[1]] > 1.0:
-                            self.__psf[position[0], position[1]] = 1.0
-                else:
-                    self.__psf[position[0], position[1]] -= random.uniform(0.1, 1.0)
-                    if self.__psf[position[0], position[1]] < 0:
-                        self.__psf[position[0], position[1]] = 0
-                break
-        self.normalize()
-
-    def upscale_fill(self, new_psf_size):
+    def __upscale_fill(self, new_psf_size):
         """
         Увеличение размера ядра путем растягивания (масштабирования)
         :param new_psf_size: новый размер ядра
@@ -156,9 +109,8 @@ class Individual:
         multiplier = new_psf_size / self.__psf_size
         self.__psf_size = new_psf_size
         self.__psf = copy.deepcopy(cv.resize(self.__psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_LINEAR))
-        self.normalize()
 
-    def upscale_pad(self, new_psf_size):
+    def __upscale_pad(self, new_psf_size):
         """
         Увеличение размера ядра путем добавления нулей по краям
         :param new_psf_size: новый размер ядра
@@ -169,5 +121,13 @@ class Individual:
         result[start_pos:start_pos + self.__psf.shape[0], start_pos:start_pos + self.__psf_size] = copy.deepcopy(self.__psf)
         self.__psf = copy.deepcopy(result)
         self.__psf_size = new_psf_size
-        self.normalize()
         return result
+
+    def upscale(self, new_psf_size, upscale_type):
+        if upscale_type == "pad":
+            self.__upscale_pad(new_psf_size)
+        elif upscale_type == "fill":
+            self.__upscale_fill(new_psf_size)
+        else:
+            raise AttributeError("Wrong type of upscale type")
+        self.normalize()

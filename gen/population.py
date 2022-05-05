@@ -1,6 +1,7 @@
 import copy
 
 from gen.individual import Individual
+from gen.mutationOperators import MutationOperators
 from utils.imgDeconv import ImgDeconv
 from utils.imgMetrics import SharpnessMetrics
 from utils.imgMetrics import SimilarityMetrics
@@ -94,8 +95,8 @@ class Population:
         self.__update_pop_size()
         copy_diff = copy.deepcopy(self.__individuals[old_size - (self.__size - old_size) - 1:old_size - 1])
         # мутация, чтобы популяция была более разнообразной
-        for ind in copy_diff:
-            ind.mutate_smart(probability=0.1, pos_prob=0.5)
+        # TODO
+        copy_diff = MutationOperators.mutate(copy_diff, {"probability": 0.1, "positive_mutation_probability": 0.5, "type": "smart"})
         self.__individuals.extend(copy.deepcopy(copy_diff))
         print("POPULATION EXPANDED")
 
@@ -111,9 +112,5 @@ class Population:
         self.__blurred = copy.deepcopy(self.__scale_pyramid.images[self.__current_psf_size])
         # апскейльнуть каждую особь
         for individual in self.__individuals:
-            if upscale_type == "pad":
-                individual.upscale_pad(self.__current_psf_size)
-            elif upscale_type == "fill":
-                individual.upscale_fill(self.__current_psf_size)
-
+            individual.upscale(self.__current_psf_size, upscale_type)
         print(f"POPULATION UPSCALED TO SIZE: {self.__current_psf_size}")
