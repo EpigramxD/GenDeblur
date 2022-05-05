@@ -4,6 +4,7 @@ import copy
 from skimage import restoration
 from .imgUtils import ImgUtils
 
+
 class ImgDeconv(object):
     @staticmethod
     def __do_RL_deconv_1c(img, psf, iterations, clip=False):

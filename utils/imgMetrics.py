@@ -238,6 +238,7 @@ class DOM(object):
         return score
 
 
+
 class SimilarityMetrics(object):
 
     @staticmethod

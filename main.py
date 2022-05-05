@@ -1,9 +1,9 @@
 import multiprocessing as mp
-
+from utils.imgUtils import ImgUtils
+import cv2 as cv
 import yaml
 
 from gen.genDeblurrer import GenDeblurrer
-from utils.size_utils import *
 
 with open("configuration.yaml") as configuration_file:
     configuration = yaml.safe_load(configuration_file)
