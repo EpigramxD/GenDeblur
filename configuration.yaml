@@ -1,5 +1,5 @@
 stagnation_population_count: 20
-population_size: 40
+base_population_size: 40
 sharpness_metric_type: fourier
 similarity_metric_type: frobenius
 deconvolution_type: wiener

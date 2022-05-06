@@ -68,7 +68,7 @@ class GenDeblurrer(object):
         self.__sharpness_metric_type = configuration["sharpness_metric_type"]
         self.__deconv_type = configuration["deconvolution_type"]
 
-        self.__population_size = configuration["population_size"]
+        self.__base_population_size = configuration["base_population_size"]
         self.__multiprocessing_manager = mp_manager
 
     def __get_best_cpu_count(self):
@@ -81,7 +81,7 @@ class GenDeblurrer(object):
         single_process_time = end - start
 
         start = time.time()
-        mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__similarity_metric_type,
+        mp_fit(self.__population.current_blurred_image, self.__multiprocessing_manager, self.__deconv_type, self.__similarity_metric_type,
                self.__sharpness_metric_type, self.__population.individuals, int(cpu_count / 4))
         end = time.time()
         mp_quad_time = end - start
@@ -90,7 +90,7 @@ class GenDeblurrer(object):
             cpu_count = 1
         else:
             start = time.time()
-            mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__similarity_metric_type,
+            mp_fit(self.__population.current_blurred_image, self.__multiprocessing_manager, self.__deconv_type, self.__similarity_metric_type,
                    self.__sharpness_metric_type, self.__population.individuals, int(cpu_count / 2))
             end = time.time()
             mp_half_time = end - start
@@ -101,7 +101,7 @@ class GenDeblurrer(object):
         return cpu_count
 
     def __write_result_for_pyramid_level(self):
-        best_result_for_size = ImgDeconv.do_deconv(self.__population.blurred, self.__population.individuals[0].psf,
+        best_result_for_size = ImgDeconv.do_deconv(self.__population.current_blurred_image, self.__population.individuals[0].psf,
                                                    type=self.__deconv_type)
         cv.normalize(best_result_for_size, best_result_for_size, 0.0, 255.0, cv.NORM_MINMAX)
 
@@ -109,7 +109,7 @@ class GenDeblurrer(object):
         best_kernel_for_size = cv.resize(lel_test, None, fx=10, fy=10, interpolation=cv.INTER_AREA)
         cv.normalize(best_kernel_for_size, best_kernel_for_size, 0, 255, cv.NORM_MINMAX)
 
-        blurred_normalized = copy.deepcopy(self.__population.blurred)
+        blurred_normalized = copy.deepcopy(self.__population.current_blurred_image)
         cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
 
         result_file_name = "../images/results/restored_size_{}.jpg".format(self.__population.current_psf_size)
@@ -127,7 +127,7 @@ class GenDeblurrer(object):
                                      self.__pyramid_config["min_resolution"],
                                      self.__pyramid_config["step"],
                                      self.__pyramid_config["max_resolution"])
-        self.__population = Population(scale_pyramid, population_size=self.__population_size)
+        self.__population = Population(scale_pyramid, base_population_size=self.__base_population_size)
         best_quality_in_pop = -10000000000.0
         upscale_flag = 0
         for i in range(0, len(scale_pyramid.psf_sizes), 1):
@@ -143,7 +143,7 @@ class GenDeblurrer(object):
                 if cpu_count == 1:
                     self.__population.fit(self.__sharpness_metric_type, self.__similarity_metric_type, self.__deconv_type)
                 else:
-                    self.__population.individuals = copy.deepcopy(mp_fit(self.__population.blurred, self.__multiprocessing_manager, self.__deconv_type, self.__sharpness_metric_type, self.__population.individuals, cpu_count))
+                    self.__population.individuals = copy.deepcopy(mp_fit(self.__population.current_blurred_image, self.__multiprocessing_manager, self.__deconv_type, self.__sharpness_metric_type, self.__population.individuals, cpu_count))
 
                 end = time.time()
                 print(f"ELAPSED TIME: {end-start}")
