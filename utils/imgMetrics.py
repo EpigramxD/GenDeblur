@@ -238,12 +238,11 @@ class DOM(object):
         return score
 
 
-
 class SimilarityMetrics(object):
 
     @staticmethod
-    def __frobenius_norm(sharp_img, blurred_img):
-        dif = sharp_img - blurred_img
+    def __frobenius_norm(deblurred_img, blurred_img):
+        dif = deblurred_img - blurred_img
         difFrobNorm = np.linalg.norm(dif, ord=2)
         x = 0.5 * difFrobNorm * difFrobNorm
         return -1 * x

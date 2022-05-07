@@ -112,9 +112,9 @@ class GenDeblurrer(object):
         blurred_normalized = copy.deepcopy(self.__population.current_blurred_image)
         cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
 
-        result_file_name = "../images/results/restored_size_{}.jpg".format(self.__population.current_psf_size)
-        blurred_file_name = "../images/results/blurred_size_{}.jpg".format(self.__population.current_psf_size)
-        kernel_file_name = "../images/results/kernel_size_{}.jpg".format(self.__population.current_psf_size)
+        result_file_name = "images/results/restored_size_{}.jpg".format(self.__population.current_psf_size)
+        blurred_file_name = "images/results/blurred_size_{}.jpg".format(self.__population.current_psf_size)
+        kernel_file_name = "images/results/kernel_size_{}.jpg".format(self.__population.current_psf_size)
 
         cv.imwrite(result_file_name, best_result_for_size)
         cv.imwrite(kernel_file_name, best_kernel_for_size)

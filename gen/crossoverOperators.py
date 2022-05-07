@@ -57,7 +57,7 @@ class CrossoverOperators(object):
             return selected
 
     @staticmethod
-    def crossover(selected_individuals, crossover_args):
+    def crossover(individuals, crossover_args):
         try:
             type = crossover_args["type"]
             probability = crossover_args["probability"]
@@ -67,9 +67,9 @@ class CrossoverOperators(object):
             raise AttributeError("Define crossover type and probability")
 
         if type == "uniform":
-            return CrossoverOperators.__uniform_crossover(selected_individuals, probability)
+            return CrossoverOperators.__uniform_crossover(individuals, probability)
         elif type == "blend":
             alpha = crossover_args["alpha"]
             if not isinstance(alpha, float):
                 raise AttributeError("Alpha parameter for blend crossover should be float")
-            return CrossoverOperators.__blend_crossover(selected_individuals, alpha)
+            return CrossoverOperators.__blend_crossover(individuals, alpha)

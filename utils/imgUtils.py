@@ -154,37 +154,6 @@ class ImgUtils(object):
         return ImgUtils.im2double(result)
 
     @staticmethod
-    def pad_to_shape(img, shape):
-        """
-        Расширить изображение до нужной формы нулями (черными рамками по краям)
-        :param img: расширяемое изображение
-        :param shape: новая форма - tuple (высота, ширина)
-        :return: рсширенное изображение
-        """
-        if shape[0] == img.shape[0] and shape[1] == img.shape[1]:
-            return copy.deepcopy(img)
-
-        elif shape[0] < img.shape[0] or shape[1] < img.shape[1]:
-            raise AttributeError("Новый размер должен быть меньше размера изображения")
-
-        center_y = int(shape[0] / 2)
-        center_x = int(shape[1] / 2)
-
-        half_height = int(img.shape[0] / 2)
-        half_width = int(img.shape[1] / 2)
-
-        x_index_from = center_x - half_width
-        x_index_to = center_x + img.shape[1] - half_width
-
-        y_index_from = center_y - half_height
-        y_index_to = center_y + img.shape[0] - half_height
-
-        result = np.zeros(shape, np.float32)
-        result[y_index_from:y_index_to, x_index_from:x_index_to] = copy.deepcopy(img)
-        cv.normalize(result, result, 0.0, 1.0, cv.NORM_MINMAX)
-        return result
-
-    @staticmethod
     def __grad_tv_1c(img, epsilon=1e-3):
         """
         Total variation gradient для одного канала
@@ -270,16 +239,16 @@ class ImgUtils(object):
         return noisy
 
     @staticmethod
-    def crop_image(image, crop_width_size, crop_height_size):
+    def crop_image(img, crop_width_size, crop_height_size):
         """
         Обрезает изображение по краям
-        :param image: изображение
+        :param img: изображение
         :param crop_width_size: размер отсечения по бокам
         :param crop_height_size: размер отсечения сверху и снизу
         :return: обрезанное изображение
         """
-        width = image.shape[1]
-        height = image.shape[0]
+        width = img.shape[1]
+        height = img.shape[0]
 
         h_start = crop_height_size
         h_finish = height - crop_height_size
@@ -287,4 +256,4 @@ class ImgUtils(object):
         w_start = crop_width_size
         w_finish = width - crop_width_size
 
-        return copy.deepcopy(image[h_start:h_finish, w_start:w_finish])
+        return copy.deepcopy(img[h_start:h_finish, w_start:w_finish])

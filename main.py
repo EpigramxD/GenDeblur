@@ -6,12 +6,12 @@ from gen.genDeblurrer import GenDeblurrer
 from utils.imgUtils import ImgUtils
 
 # четкое изображение
-sharp = cv.imread("images/sharp/lena.png", cv.IMREAD_GRAYSCALE)
+sharp = cv.imread("images/sharp/bstu1.jpg", cv.IMREAD_GRAYSCALE)
 sharp = sharp ** (1/2.2)
 
 # PSF
 # psf = drawing.draw_gaussian(sharp.shape, 3.0)
-psf = cv.imread("images/psfs/3.png", cv.IMREAD_GRAYSCALE)
+psf = cv.imread("images/psfs/1.png", cv.IMREAD_GRAYSCALE)
 # размытие
 blurred = ImgUtils.freq_filter(sharp, psf)
 # наложение шума
