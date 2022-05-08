@@ -143,7 +143,7 @@ class GenDeblurrer(object):
                 if cpu_count == 1:
                     self.__population.fit(self.__sharpness_metric_type, self.__similarity_metric_type, self.__deconv_type)
                 else:
-                    self.__population.individuals = copy.deepcopy(mp_fit(self.__population.current_blurred_image, self.__multiprocessing_manager, self.__deconv_type, self.__sharpness_metric_type, self.__population.individuals, cpu_count))
+                    self.__population.individuals = copy.deepcopy(mp_fit(self.__population.current_blurred_image, self.__multiprocessing_manager, self.__deconv_type, self.__similarity_metric_type, self.__sharpness_metric_type, self.__population.individuals, cpu_count))
 
                 end = time.time()
                 print(f"ELAPSED TIME: {end-start}")
