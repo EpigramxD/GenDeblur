@@ -1,5 +1,6 @@
 # GenDeblur
-Library for blind image deconvolution using genetic algorithm.
+Library to research the application of genetic algorithms in the blind image deconvolution.
+Currently works only with artificially blurred images.
 
 Example of usage: https://github.com/EpigramxD/GendeblurExample
 
