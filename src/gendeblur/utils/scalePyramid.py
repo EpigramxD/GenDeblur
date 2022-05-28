@@ -18,7 +18,7 @@ class ScalePyramid(object):
         :param max_psf_size: максимальный размер ядра
         """
         self.__get_sizes(min_psf_size, step, max_psf_size)
-        self.__build(blurred_img, max_psf_size, cv.INTER_AREA)
+        self.__build(blurred_img, max_psf_size)
 
     @property
     def psf_sizes(self):
@@ -36,18 +36,17 @@ class ScalePyramid(object):
         """
         return self.__images
 
-    def __build(self, blurred_img, min_psf_size, inter_type):
+    def __build(self, blurred_img, max_resolution):
         """
         Построить пирамиду
         :param blurred_img: искаженное изображение
-        :param min_psf_size: максимальный размер ядра (разрешение функции искажения)
-        :param inter_type: вид интерполяции
+        :param max_resolution: максимальный размер ядра (разрешение функции искажения)
         """
         self.__images = dict()
         for size in self.__psf_sizes:
-            multiplier = size / min_psf_size
+            multiplier = size / max_resolution
             if multiplier != 1:
-                blurred_resized = cv.resize(blurred_img, None, fx=multiplier, fy=multiplier, interpolation=inter_type)
+                blurred_resized = cv.resize(blurred_img, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_AREA)
             else:
                 blurred_resized = blurred_img.copy()
             blurred_resized = ImgUtils.im2double(blurred_resized)
