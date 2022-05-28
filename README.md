@@ -1,6 +1,8 @@
 # GenDeblur
 Library for blind image deconvolution using genetic algorithm.
+
 Example of usage: https://github.com/EpigramxD/GendeblurExample
+
 PyPi package: https://pypi.org/project/gendeblur/
 
 ## Requirements:
