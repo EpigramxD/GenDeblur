@@ -22,8 +22,12 @@ Examples:
 pip install -r requirements.txt
 pip install gendeblur
 ```
+or
+```
+pip install git+https://github.com/EpigramxD/GenDeblur.git
+```
 
-Build package: python -m build
+Build package: ```python -m build```
 
-Push package to PyPi: python -m twine upload --verbose --repository pypi dist/*
+Push package to PyPi: ```python -m twine upload --verbose --repository pypi dist/*```
 
