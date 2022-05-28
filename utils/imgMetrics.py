@@ -1,55 +1,10 @@
-import copy
-import cpbd
+import os
+
 import cv2 as cv
 import numpy as np
-import imquality.brisque as brisque
-import os
-from .misc import check_and_convert_to_grayscale
-from .freq_domain_utils import get_dft, get_dft_magnitude
-from .misc import get_dark_channel
+from skimage.metrics import structural_similarity, peak_signal_noise_ratio, mean_squared_error
 
-
-def grad_quality(image):
-    """
-    Качество на основе градиента
-    :param image: оцениваемое изображение
-    :return: качество изображения
-    """
-    prepared_image = check_and_convert_to_grayscale(image)
-    sobel_x = cv.Sobel(prepared_image, cv.CV_64F, 1, 0)
-    sobel_y = cv.Sobel(prepared_image, cv.CV_64F, 0, 1)
-    FM = sobel_x * sobel_x + sobel_y * sobel_y
-    quality = cv.mean(FM)[0]
-    return quality
-
-
-def fourier_quality(image):
-    """
-    Качество на основе яркости образа Фурье
-    :param image: оцениваемое изображение
-    :return: качество изображения
-    """
-    prepared_image = check_and_convert_to_grayscale(copy.deepcopy(image))
-    dft = get_dft(prepared_image)
-    dft_magnitude = get_dft_magnitude(dft)
-    quality = cv.mean(dft_magnitude)[0]
-    return quality
-
-
-def get_dark_quality(image, kernel_size):
-    """
-    Качество на основе "темного" канала изображения
-    :param image: оцениваемое изображение
-    :param kernel_size: размер ядра
-    :return: качество изображения
-    """
-    return -1 * np.max(get_dark_channel(image, kernel_size))
-
-
-def grad_map_sim(image1, image2):
-    grad_image1 = cv.Laplacian(image1, cv.CV_32F)
-    grad_image2 = cv.Laplacian(image2, cv.CV_32F)
-    return np.sum(abs(grad_image1 - grad_image2))
+from .imgUtils import ImgUtils
 
 
 class DOM(object):
@@ -281,25 +236,97 @@ class DOM(object):
         self.edges(image, edge_threshold=edge_threshold)
         score = self.sharpness_measure(Im, width=width, sharpness_threshold=sharpness_threshold)
         return score
-dom = DOM()
 
 
-def get_quality(image, type):
-    """
-    Получить качество по типу
-    :param image: оцениваемое изображение
-    :param type: тип метрики
-    :return: качество изображения
-    """
-    if type == "gradient":
-        return grad_quality(image)
-    elif type == "fourier":
-        return fourier_quality(image)
-    elif type == "dark":
-        return get_dark_quality(image, 10)
-    elif type == "dom":
-        return dom.get_sharpness(image)
-    elif type == "brisque":
-        return brisque.score(image)
-    elif type == "cpbd":
-        return cpbd.compute(image)
+class SimilarityMetrics(object):
+
+    @staticmethod
+    def __frobenius_norm(deblurred_img, blurred_img):
+        dif = deblurred_img - blurred_img
+        difFrobNorm = np.linalg.norm(dif, ord=2)
+        x = 0.5 * difFrobNorm * difFrobNorm
+        return -1 * x
+
+    @staticmethod
+    def get_similarity(deblurred_img, blurred_img, type):
+        """
+        Получить референсное качество по его типу
+        :param deblurred_img: восстановленное изображение
+        :param blurred_img: размытое изображение
+        :param type: тип метрики
+        :return: мера сходства между двумя изображениями
+        """
+        if type == "ssim":
+            return structural_similarity(deblurred_img, blurred_img)
+        if type == "psnr":
+            return peak_signal_noise_ratio(deblurred_img, blurred_img)
+        if type == "mse":
+            return mean_squared_error(deblurred_img, blurred_img)
+        if type == "frobenius":
+            return SimilarityMetrics.__frobenius_norm(deblurred_img, blurred_img)
+
+
+class SharpnessMetrics(object):
+    __dom = DOM()
+
+    @staticmethod
+    def __get_gradient_sharpness(image):
+        """
+        Качество на основе градиента
+        :param image: оцениваемое изображение
+        :return: качество изображения
+        """
+        prepared_image = ImgUtils.to_grayscale(image)
+        sobel_x = cv.Sobel(prepared_image, cv.CV_64F, 1, 0)
+        sobel_y = cv.Sobel(prepared_image, cv.CV_64F, 0, 1)
+        FM = sobel_x * sobel_x + sobel_y * sobel_y
+        quality = cv.mean(FM)[0]
+        return quality
+
+    @staticmethod
+    def __get_fourier_sharpness(img):
+        """
+        Качество на основе яркости образа Фурье
+        :param img: оцениваемое изображение
+        :return: качество изображения
+        """
+        prepared_image = ImgUtils.to_grayscale(img)
+        dft = ImgUtils.get_dft(prepared_image)
+        dft_magnitude = ImgUtils.get_dft_magnitude(dft)
+        quality = np.sum(dft_magnitude) / 6.5
+        return quality
+
+    @staticmethod
+    def __get_dark_channel_sharpness(img, kernel_size):
+        """
+        Качество на основе "темного" канала изображения
+        :param img: оцениваемое изображение
+        :param kernel_size: размер ядра
+        :return: качество изображения
+        """
+        return -1 * np.max(ImgUtils.get_dark_channel(img, kernel_size))
+
+    @staticmethod
+    def __get_p_norm_sharpness(img):
+        lamb = 0.0003
+        p = 100000000.0
+        return (lamb/2.0) * np.power(np.sum(np.power(np.absolute(img), p)), 1.0 / p)
+
+    @staticmethod
+    def get_sharpness(img, type):
+        """
+        Получить не-референсное качество по его типу
+        :param image: оцениваемое изображение
+        :param type: тип метрики, оценивающей четкость изображения
+        :return: четкость изображения
+        """
+        if type == "gradient":
+            return SharpnessMetrics.__get_gradient_sharpness(img)
+        elif type == "fourier":
+            return SharpnessMetrics.__get_fourier_sharpness(img)
+        elif type == "dark":
+            return SharpnessMetrics.__get_dark_channel_sharpness(img, 10)
+        elif type == "dom":
+            return SharpnessMetrics.__dom.get_sharpness(img)
+        elif type == "p_norm":
+            return SharpnessMetrics.__get_p_norm_sharpness(img)

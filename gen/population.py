@@ -1,76 +1,102 @@
+import copy
+
 from gen.individual import Individual
-from gen.mutation import mutate
-from utils.size_utils import *
-from utils.deconv import do_RL_deconv, do_weiner_deconv_1c
-from utils.metric import get_quality
-from utils.misc import *
+from gen.mutationOperators import MutationOperators
+from utils.imgDeconv import ImgDeconv
+from utils.imgMetrics import SharpnessMetrics
+from utils.imgMetrics import SimilarityMetrics
 
 
 class Population:
     """
     Класс популяции
     """
-    def __init__(self, image, max_kernel_size, metric_type):
+    def __init__(self, scale_pyramid, base_population_size=10):
         """
         Конструктор
-        :param image: размытое изображение
-        :param max_kernel_size: максимальный размер ядра
-        :param metric_type: используемая для оценки качества матрика (см. utils.metric.get_quality)
+        :param scale_pyramid: scale-пирамида
+        :param population_size: количество особей в популяции
         """
-        self.metric_type = metric_type
-        # начальный размер ядра, всегда начинаем с ядра 3x3
-        self.kernel_size = 3
-        # получить пирамиду размеров
-        self.size_pyramid = build_size_pyramid(image, max_kernel_size)
-        # установить начальное размытое изображение самого маленького размера в ядре
-        self.image = self.size_pyramid[self.kernel_size]
-        # список всех размеров ядер
-        self.kernel_sizes = list(self.size_pyramid)
+        # текущий размер ядра
+        self.__scale_pyramid = scale_pyramid
+        self.__size = base_population_size
+        self.__base_size = base_population_size
+        self.__current_psf_size = scale_pyramid.psf_sizes[0]
+        self.__current_blurred_image = self.__scale_pyramid.images[self.__current_psf_size]
         # обновить размер популяции
-        self.__update_pop_size()
+        self.__update_population_size()
         # создание особей
-        self.individuals = [Individual(self.kernel_size, self.kernel_size==3) for i in range(0, self.size)]
-        self.individuals[0].psf[0][2] = 1.0
-        self.individuals[0].psf[1][1] = 1.0
-        self.individuals[0].psf[2][0] = 1.0
+        self.__individuals = [Individual(self.__current_psf_size, True) for i in range(0, self.__size)]
 
-    def fit(self, deconvolution_type):
-        """
-        Оценка приспособленностей особей
-        :param deconvolution_type: вид инверсной фильтрации (деконволюции): "weiner" - фильтр винера, "LR" - метод Люси-Ричардсона
-        """
-        for individual in self.individuals:
-            if deconvolution_type == "weiner":
-                deblurred_image = do_weiner_deconv_1c(self.image, individual.psf, 1000)
-            elif deconvolution_type == "LR":
-                deblurred_image = do_RL_deconv(self.image, individual.psf, iterations=1)
-            # обрезка краев, чтобы не портили оценку
-            #deblurred_image = crop_image(deblurred_image, int(deblurred_image.shape[1]/10), int(deblurred_image.shape[0]/10))
-            individual.score = get_quality(deblurred_image, self.metric_type) #- np.count_nonzero(individual.psf)
-        self.individuals.sort(key=lambda x: x.score, reverse=True)
+    @property
+    def current_psf_size(self):
+        return self.__current_psf_size
 
-    def __update_pop_size(self, multiplier=10):
+    @property
+    def scale_pyramid(self):
+        return self.__scale_pyramid
+
+    @property
+    def current_blurred_image(self):
+        return self.__current_blurred_image
+
+    @property
+    def individuals(self):
+        return self.__individuals
+
+    @individuals.setter
+    def individuals(self, individuals):
+        self.__individuals = copy.deepcopy(individuals)
+
+    @property
+    def base_size(self):
+        return self.__base_size
+
+    @property
+    def size(self):
+        return self.__size
+
+    def fit(self, sharpness_metric_type, similarity_metric_type, deconv_type):
+        """
+        Оценка приспособленностей особей популяции
+        """
+        for individual in self.__individuals:
+            deblurred_image = ImgDeconv.do_deconv(self.__current_blurred_image, individual.psf, deconv_type)
+            individual.score = SimilarityMetrics.get_similarity(deblurred_image, self.__current_blurred_image, similarity_metric_type)
+            individual.score += SharpnessMetrics.get_sharpness(deblurred_image, sharpness_metric_type)
+
+        self.__individuals.sort(key=lambda x: x.score, reverse=True)
+
+    def get_elite_non_elite(self, elite_count):
+        """
+        Получить элитных и не элитных особей
+        :param elite_count: количество элитных особей
+        :return: (элитные, не элитные)
+        """
+        return copy.deepcopy(self.__individuals[:elite_count]), copy.deepcopy(self.__individuals[elite_count:])
+
+    def __update_population_size(self):
         """
         Обновление размера популяции
-        :param multiplier: множитель (во сколько раз должна увеличиться популяция, чем больше размер ядра, тем больше будет популяция)
         :return:
         """
-        self.size = self.kernel_size * multiplier
+        self.__size = self.__base_size + self.__current_psf_size
         print("POPULATION SIZE UPDATED")
 
     def __expand_population(self):
         """
-        Расширение популяции до указанного размера self.size
-        :return:
+        Расширение популяции до указанного размера self.__size
         """
-        new_kernel_size_index = self.kernel_sizes.index(self.kernel_size) + 1
-        new_kernel_size = self.kernel_sizes[new_kernel_size_index]
-        self.kernel_size = new_kernel_size
-        old_size = self.size
-        self.__update_pop_size()
-        copy_diff = copy.deepcopy(self.individuals[old_size - (self.size - old_size) - 1:old_size - 1])
-        copy_diff = mutate(copy_diff)
-        self.individuals.extend(copy.deepcopy(copy_diff))
+        new_kernel_size_index = self.__scale_pyramid.psf_sizes.index(self.__current_psf_size) + 1
+        new_kernel_size = self.__scale_pyramid.psf_sizes[new_kernel_size_index]
+        self.__current_psf_size = new_kernel_size
+        old_size = self.__size
+        self.__update_population_size()
+        copy_diff = copy.deepcopy(self.__individuals[old_size - (self.__size - old_size) - 1:old_size - 1])
+        # мутация, чтобы популяция была более разнообразной
+        # TODO
+        copy_diff = MutationOperators.mutate(copy_diff, {"probability": 0.1, "positive_mutation_probability": 0.5, "type": "smart"})
+        self.__individuals.extend(copy.deepcopy(copy_diff))
         print("POPULATION EXPANDED")
 
     def upscale(self, upscale_type):
@@ -82,15 +108,8 @@ class Population:
         # расширение популяции
         self.__expand_population()
         # получить следующее по размеру размытое изображение из пирамиды
-        self.image = copy.deepcopy(self.size_pyramid[self.kernel_size])
-
+        self.__current_blurred_image = copy.deepcopy(self.__scale_pyramid.images[self.__current_psf_size])
         # апскейльнуть каждую особь
-        if upscale_type == "pad":
-            for individual in self.individuals:
-                individual.upscale_pad(self.kernel_size)
-
-        elif upscale_type == "fill":
-            for individual in self.individuals:
-                individual.upscale(self.kernel_size)
-        print("POPULATION UPSCALED")
-
+        for individual in self.__individuals:
+            individual.upscale(self.__current_psf_size, upscale_type)
+        print(f"POPULATION UPSCALED TO SIZE: {self.__current_psf_size}")

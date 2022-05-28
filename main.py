@@ -1,68 +1,27 @@
+import multiprocessing as mp
 
 import cv2 as cv
-import cv2.quality as q
-import imquality.brisque as brisque
-from skimage.metrics import structural_similarity as ssim
-import numpy as np
-from skimage import color, data, restoration
-from utils.drawing import draw_line
-from utils.metric import *
-from utils.misc import *
-from utils.deconv import *
 
-image = cv.imread("D:\Images\IMGS\pic6.jpg", cv.IMREAD_GRAYSCALE)
-image = np.float32(image)
-cv.normalize(image, image, 0.0, 1.0, cv.NORM_MINMAX)
+from gen.genDeblurrer import GenDeblurrer
+from utils.imgUtils import ImgUtils
 
-line = draw_line((23, 23), 22, 45)
-cv.imshow("line", line)
-restored_image1 = do_RL_deconv(image, line, iterations=15)
-cv.normalize(restored_image1, restored_image1, 0, 255, cv.NORM_MINMAX)
-restored_image1 = np.uint8(restored_image1)
-cv.imshow("restored_image1", restored_image1)
-cv.waitKey()
+# четкое изображение
+sharp = cv.imread("images/sharp/bstu1.jpg", cv.IMREAD_GRAYSCALE)
+sharp = sharp ** (1/2.2)
 
+# PSF
+# psf = drawing.draw_gaussian(sharp.shape, 3.0)
+psf = cv.imread("images/psfs/1.png", cv.IMREAD_GRAYSCALE)
+# размытие
+blurred = ImgUtils.freq_filter(sharp, psf)
+# наложение шума
+# blurred = misc.get_noisy_image(blurred, 0.00172135)
+cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
 
-#
-# resized_image = cv.resize(image, None, fx=0.5, fy=0.5, interpolation=cv.INTER_CUBIC)
-# cv.imshow("resized_image", resized_image)
-#
-# resized_line = cv.resize(line, None, fx=10, fy=10, interpolation=cv.INTER_CUBIC)
-# cv.imshow("resized_line", resized_line)
-# resized_line2 = cv.resize(resized_line, None, fx=0.5, fy=0.5, interpolation=cv.INTER_CUBIC)
-# cv.imshow("resized_line2", resized_line2)
-# cv.waitKey()
+if __name__ == '__main__':
+    mp.freeze_support()
 
-# data frame for writing stats in excel file
-# df = {'angle': [], 'length': [], 'quality': []}
+    mp_manager = mp.Manager()
+    deblurrer = GenDeblurrer("configuration.yaml", mp_manager)
+    deblurred_img, psf = deblurrer.deblur(blurred)
 
-# for i in range(0, 180, 5):
-#     for j in range(3, 25, 1):
-#         print(f"Progress: {i}:{j}")
-#         line1 = draw_line((23, 23), j, i)
-#         restored_image1 = do_RL_deconv_3c(image, line1, iterations=1)
-#         #quality = get_quality(restored_image1, type="dark")
-#         #ssim_measure = ssim(to_grayscale(image), to_grayscale(restored_image1))
-#         quality = brisque.score(restored_image1)
-#         df['angle'].append(i)
-#         df['length'].append(j)
-#         df['quality'].append(quality)
-#
-# df = pd.DataFrame(df)
-# df.to_excel('D:/dark_test.xlsx')
-
-
-# line = draw_line((23, 23), best_length, best_angle)
-# restored_image1 = do_RL_deconv_1c(image, line, iterations=15)
-# cv.normalize(restored_image1, restored_image1, 0, 255, cv.NORM_MINMAX)
-# restored_image1 = np.uint8(restored_image1)
-# cv.imshow("restored_image1", restored_image1)
-# cv.waitKey()
-
-
-# restored_image2 = do_RL_deconv_3c(image, line2, iterations=15)
-# cv.normalize(restored_image2, restored_image2, 0, 255, cv.NORM_MINMAX)
-# restored_image2 = np.uint8(restored_image2)
-# cv.imshow("restored_image2", restored_image2)
-# quality2 = get_quality(restored_image2, type="dark")
-# print("quality2: ", quality2)

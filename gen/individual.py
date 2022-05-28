@@ -2,9 +2,10 @@ import numpy as np
 import cv2 as cv
 import copy
 import random
+from utils.imgUtils import ImgUtils
 
 
-class Individual:
+class Individual(object):
     """
     Класс, представляющий особь
     """
@@ -16,11 +17,11 @@ class Individual:
         # Если параметр 1, то это psf, устанавливаем его и устанавливаем размеры
         if len(args) == 1:
             if isinstance(args[0], np.ndarray):
-                self.psf = args[0].copy()
-                if self.psf.shape[0] != self.psf.shape[1]:
+                self.__psf = args[0].copy()
+                if self.__psf.shape[0] != self.__psf.shape[1]:
                     raise AttributeError("Ядро смаза должно иметь одинаковую высоту и ширину".format(type(args[0])))
-                self.kernel_size = self.psf.shape[0]
-                self.score = 0.0
+                self.__psf_size = self.__psf.shape[0]
+                self.__score = 0.0
             else:
                 raise AttributeError("Получен аргумент типа {}, а должен быть ndarray".format(type(args[0])))
 
@@ -29,57 +30,50 @@ class Individual:
             kernel_size = args[0]
             is_line = args[1]
             if isinstance(kernel_size, int) and isinstance(is_line, bool):
-                self.kernel_size = kernel_size
-                self.score = 0.0
-                self.psf = np.zeros((kernel_size, kernel_size))
+                self.__psf_size = kernel_size
+                self.__score = 0.0
+                self.__psf = np.zeros((kernel_size, kernel_size))
                 if is_line:
-                    self.psf[1][0] = 1.0
-                    self.psf[1][1] = 1.0
-                    self.psf[1][2] = 1.0
+                    self.__psf[int(kernel_size / 2) + 1][:] = 1.0
             else:
                 raise AttributeError("Получены аргументы типа {} и {}, а должны быть int и bool".format(type(args[0]), type(args[1])))
 
         self.normalize()
 
+    @property
+    def psf(self):
+        return self.__psf
+
+    @psf.setter
+    def psf(self, psf):
+        self.__psf = psf.copy()
+
+    @property
+    def score(self):
+        return self.__score
+
+    @score.setter
+    def score(self, score):
+        self.__score = score
+
+    @property
+    def psf_size(self):
+        return self.__psf_size
+
     def normalize(self):
         """
         Нормализация psf
         """
-        self.psf = np.float32(self.psf)
-        cv.normalize(self.psf, self.psf, 0.0, 1.0, cv.NORM_MINMAX)
-
-    def mutate(self, probability=0.05, add_prob=0.000001):
-        """
-        Мутация особи
-        :param probability: вероятность мутирования
-        :param add_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
-        """
-        for row in range(0, self.kernel_size):
-            for col in range(0, self.kernel_size):
-                if random.random() < probability:
-                    if random.random() < add_prob:
-                        self.psf[row][col] += random.random()
-                        if self.psf[row][col] > 1.0:
-                            self.psf[row][col] = 1.0
-                    else:
-                        self.psf[row][col] -= random.random()
-                        if self.psf[row][col] < 0.0:
-                            self.psf[row][col] = 0
-        self.normalize()
-
-    def __check_neighbors(self, row, col):
-        """
-        Проверяет наличие других светлых пикселей вокруг пикселя в строке row и столбце col
-        :param self: объект
-        :param row: номер строки пикселя
-        :param col: номер столбца пикселя
-        :return: boolean
-        """
-        return np.sum(self.psf[row-1:row+2, col-1:col+2]) > self.psf[row, col]
+        self.__psf = ImgUtils.im2double(self.__psf)
 
     def __get_random_vertical_neighbor(self, row):
+        """
+        Выбрать индекс случайного соседа по вертикали
+        :param row: номер строки элемента, вокруг которого ищется сосед
+        :return: случайный индекс
+        """
         down_bound = 0
-        up_bound = self.psf.shape[0] - 1
+        up_bound = self.__psf.shape[0] - 1
 
         if row == down_bound:
             return random.choice([row + 1, row + 2, row + 3])
@@ -89,8 +83,13 @@ class Individual:
             return random.choice([row + 1, row + 2, row + 3, row - 1, row - 2, row - 3])
 
     def __get_random_horizontal_neighbor(self, col):
+        """
+        Выбрать индекс случайного соседа по горизонтали
+        :param col: номер столбца элемента, вокруг которого ищется сосед
+        :return: случайный индекс
+        """
         left_bound = 0
-        right_bound = self.psf.shape[1] - 1
+        right_bound = self.__psf.shape[1] - 1
 
         if col == left_bound:
             return random.choice([col + 1, col + 2, col + 3])
@@ -99,68 +98,36 @@ class Individual:
         else:
             return random.choice([col + 1, col + 2, col + 3, col - 1, col - 2, col - 3])
 
-    def __get_random_neighbor_position(self, row, col):
-        # TODO: если что, убрать потом, может пригодится, если нынишний вариант не будут работать
-        # left = (row, col - 1)
-        # right = (row, col + 1)
-        # upper = (row + 1, col)
-        # down = (row - 1, col)
-        # upper_left = (row + 1, col - 1)
-        # down_left = (row - 1, col - 1)
-        # upper_right = (row + 1, col + 1)
-        # down_right = (row - 1, col + 1)
-        return self.__get_random_horizontal_neighbor(col), self.__get_random_vertical_neighbor(row)
+    def get_random_neighbor_position(self, row, col):
+        return self.__get_random_vertical_neighbor(row), self.__get_random_horizontal_neighbor(col)
 
-    def mutate_smart(self, probability=0.1, add_prob=0.9):
-        """
-        Умная мутация особи
-        :param probability: вероятность мутирования
-        :param add_prob: вероятность добавления рандомного значения к гену, если меньше, то вычитание
-        """
-        bright_pixels = np.argwhere(self.psf > 0.1)
-
-        #TODO: попробовать потом мутировать по одному пикселю
-
-        for position in bright_pixels:
-            if random.random() < probability:
-                random_neighbor_position = self.__get_random_neighbor_position(position[0], position[1])
-
-                if random.random() < add_prob:
-                    try:
-                        self.psf[random_neighbor_position[0], random_neighbor_position[1]] += random.uniform(0.1, 1.0)
-                        if self.psf[random_neighbor_position[0], random_neighbor_position[1]] > 1.0:
-                            self.psf[random_neighbor_position[0], random_neighbor_position[1]] = 1.0
-                    except IndexError:
-                        self.psf[position[0], position[1]] += random.uniform(0.1, 1.0)
-                        if self.psf[position[0], position[1]] > 1.0:
-                            self.psf[position[0], position[1]] = 1.0
-                else:
-                    self.psf[position[0], position[1]] -= random.uniform(0.1, 1.0)
-                    if self.psf[position[0], position[1]] < 0:
-                        self.psf[position[0], position[1]] = 0
-                break
-        self.normalize()
-
-    def upscale(self, new_kernel_size):
+    def __upscale_fill(self, new_psf_size):
         """
         Увеличение размера ядра путем растягивания (масштабирования)
-        :param new_kernel_size: новый размер ядра
+        :param new_psf_size: новый размер ядра
         """
-        multiplier = new_kernel_size / self.kernel_size
-        self.kernel_size = new_kernel_size
-        self.psf = copy.deepcopy(cv.resize(self.psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_AREA))
-        self.normalize()
+        multiplier = new_psf_size / self.__psf_size
+        self.__psf_size = new_psf_size
+        self.__psf = copy.deepcopy(cv.resize(self.__psf, None, fx=multiplier, fy=multiplier, interpolation=cv.INTER_LINEAR))
 
-    def upscale_pad(self, new_kernel_size):
+    def __upscale_pad(self, new_psf_size):
         """
         Увеличение размера ядра путем добавления нулей по краям
-        :param new_kernel_size: новый размер ядра
+        :param new_psf_size: новый размер ядра
         """
-        result = np.zeros((new_kernel_size, new_kernel_size), np.float32)
-        difference = new_kernel_size - self.psf.shape[0]
-        start_pos = int(difference/2)
-        result[start_pos:start_pos + self.psf.shape[0], start_pos:start_pos + self.kernel_size] = copy.deepcopy(self.psf)
-        self.psf = copy.deepcopy(result)
-        self.kernel_size = new_kernel_size
-        self.normalize()
+        result = np.zeros((new_psf_size, new_psf_size), np.float32)
+        difference = new_psf_size - self.__psf.shape[0]
+        start_pos = int(difference / 2)
+        result[start_pos:start_pos + self.__psf.shape[0], start_pos:start_pos + self.__psf_size] = copy.deepcopy(self.__psf)
+        self.__psf = copy.deepcopy(result)
+        self.__psf_size = new_psf_size
         return result
+
+    def upscale(self, new_psf_size, upscale_type):
+        if upscale_type == "pad":
+            self.__upscale_pad(new_psf_size)
+        elif upscale_type == "fill":
+            self.__upscale_fill(new_psf_size)
+        else:
+            raise AttributeError("Wrong type of upscale type")
+        self.normalize()
