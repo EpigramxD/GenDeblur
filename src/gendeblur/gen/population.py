@@ -1,10 +1,10 @@
 import copy
 
-from gen.individual import Individual
-from gen.mutationOperators import MutationOperators
-from utils.imgDeconv import ImgDeconv
-from utils.imgMetrics import SharpnessMetrics
-from utils.imgMetrics import SimilarityMetrics
+from .individual import Individual
+from .mutationOperators import MutationOperators
+from ..utils.imgDeconv import ImgDeconv
+from ..utils.imgMetrics import SharpnessMetrics
+from ..utils.imgMetrics import SimilarityMetrics
 
 
 class Population:

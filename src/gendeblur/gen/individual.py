@@ -2,7 +2,7 @@ import numpy as np
 import cv2 as cv
 import copy
 import random
-from utils.imgUtils import ImgUtils
+from ..utils.imgUtils import ImgUtils
 
 
 class Individual(object):

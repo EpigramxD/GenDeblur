@@ -2,20 +2,19 @@ import multiprocessing as mp
 
 import cv2 as cv
 
-from gen.genDeblurrer import GenDeblurrer
-from utils.imgUtils import ImgUtils
+from src.gendeblur.gen import GenDeblurrer
+from src.gendeblur.utils.imgUtils import ImgUtils
 
 # четкое изображение
-sharp = cv.imread("images/sharp/bstu1.jpg", cv.IMREAD_GRAYSCALE)
+sharp = cv.imread("images/sharp/5.png", cv.IMREAD_GRAYSCALE)
 sharp = sharp ** (1/2.2)
 
 # PSF
-# psf = drawing.draw_gaussian(sharp.shape, 3.0)
-psf = cv.imread("images/psfs/1.png", cv.IMREAD_GRAYSCALE)
+psf = cv.imread("images/psfs/2.png", cv.IMREAD_GRAYSCALE)
 # размытие
 blurred = ImgUtils.freq_filter(sharp, psf)
 # наложение шума
-# blurred = misc.get_noisy_image(blurred, 0.00172135)
+# blurred = ImgUtils.get_noisy_image(blurred, 0.0122135)
 cv.normalize(blurred, blurred, 0.0, 1.0, cv.NORM_MINMAX)
 
 if __name__ == '__main__':

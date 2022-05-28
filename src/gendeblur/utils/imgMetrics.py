@@ -293,7 +293,7 @@ class SharpnessMetrics(object):
         prepared_image = ImgUtils.to_grayscale(img)
         dft = ImgUtils.get_dft(prepared_image)
         dft_magnitude = ImgUtils.get_dft_magnitude(dft)
-        quality = np.sum(dft_magnitude) / 6.5
+        quality = np.sum(dft_magnitude) / 6.0
         return quality
 
     @staticmethod

@@ -3,13 +3,13 @@ import multiprocessing as mp
 import time
 import yaml
 import cv2 as cv
-
-from gen.population import Population
-from utils.imgDeconv import ImgDeconv
-from utils.imgMetrics import SharpnessMetrics
-from utils.imgMetrics import SimilarityMetrics
-from utils.imgUtils import ImgUtils
-from utils.scalePyramid import ScalePyramid
+from pathlib import Path
+from .population import Population
+from ..utils.imgDeconv import ImgDeconv
+from ..utils.imgMetrics import SharpnessMetrics
+from ..utils.imgMetrics import SimilarityMetrics
+from ..utils.imgUtils import ImgUtils
+from ..utils.scalePyramid import ScalePyramid
 from .crossoverOperators import CrossoverOperators
 from .mutationOperators import MutationOperators
 from .selectionOperators import SelectionOperators
@@ -67,9 +67,11 @@ class GenDeblurrer(object):
         self.__similarity_metric_type = configuration["similarity_metric_type"]
         self.__sharpness_metric_type = configuration["sharpness_metric_type"]
         self.__deconv_type = configuration["deconvolution_type"]
+        self.__results_directory_path = configuration["results_directory_path"]
 
         self.__base_population_size = configuration["base_population_size"]
         self.__multiprocessing_manager = mp_manager
+        Path(self.__results_directory_path).mkdir(parents=True, exist_ok=True)
 
     def __get_best_cpu_count(self):
         # считаем, что выгоднее использовать по времени
@@ -112,9 +114,9 @@ class GenDeblurrer(object):
         blurred_normalized = copy.deepcopy(self.__population.current_blurred_image)
         cv.normalize(blurred_normalized, blurred_normalized, 0, 255, cv.NORM_MINMAX)
 
-        result_file_name = "images/results/restored_size_{}.jpg".format(self.__population.current_psf_size)
-        blurred_file_name = "images/results/blurred_size_{}.jpg".format(self.__population.current_psf_size)
-        kernel_file_name = "images/results/kernel_size_{}.jpg".format(self.__population.current_psf_size)
+        result_file_name = "{}/restored_size_{}.jpg".format(self.__results_directory_path, self.__population.current_psf_size)
+        blurred_file_name = "{}/blurred_size_{}.jpg".format(self.__results_directory_path, self.__population.current_psf_size)
+        kernel_file_name = "{}/kernel_size_{}.jpg".format(self.__results_directory_path, self.__population.current_psf_size)
 
         cv.imwrite(result_file_name, best_result_for_size)
         cv.imwrite(kernel_file_name, best_kernel_for_size)

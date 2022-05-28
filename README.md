@@ -1,4 +1,7 @@
 # GenDeblur
+Library for blind image deconvolution using genetic algorithm.
 ### Requirements:
 - Python 3.8.0
-- requirements.txt
+- all packages from requirements.txt
+
+Build package: python -m build
